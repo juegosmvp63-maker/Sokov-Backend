@@ -10,11 +10,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Servir archivos estáticos (index.html, admin.html) desde la raíz si están juntos
 app.use(express.static(path.join(__dirname)));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configuración de multer para guardar comprobantes de pago
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const fs = require('fs');
@@ -29,26 +27,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Base de datos en memoria para las órdenes y comprobantes pendientes
-let pendingOrders = [
-    {
-        id: "ord_demo01",
-        client_name: "0412-5551234",
-        player_id: "10794160784",
-        product: "Free Fire: 110 Diamantes ($0.83)",
-        payment_method: "Pago Móvil (BDV)",
-        payment_ref: "984512",
-        receipt_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100",
-        status: "pending",
-        created_at: new Date().toISOString()
-    }
-];
+let pendingOrders = [];
 
-// CONFIGURACIÓN API CENTRALONE GLOBAL
-const CO_API_KEY = process.env.CO_API_KEY || "TU_API_KEY_DE_CENTRALONE";
+const CO_API_KEY = process.env.CO_API_KEY;
 const CO_BASE_URL = "https://portal.centraloneglobal.com/api/v1";
 
-// Endpoint para que el cliente envíe su comprobante de pago
 app.post('/api/v1/submit-payment', upload.single('receipt'), (req, res) => {
     const { client_name, player_id, product, payment_method, payment_ref } = req.body;
     const receiptFile = req.file ? `/uploads/${req.file.filename}` : "https://via.placeholder.com/80";
@@ -66,16 +49,14 @@ app.post('/api/v1/submit-payment', upload.single('receipt'), (req, res) => {
     };
     
     pendingOrders.unshift(newOrder);
-    console.log("Nuevo comprobante recibido:", newOrder);
-    res.json({ success: true, message: "Comprobante recibido y en revisión", order: newOrder });
+    res.json({ success: true, message: "Comprobante recibido", order: newOrder });
 });
 
-// Endpoint para el cPanel: Listar todas las órdenes
 app.get('/api/v1/admin/orders', (req, res) => {
     res.json({ success: true, orders: pendingOrders });
 });
 
-// Endpoint para el cPanel: Aprobar orden y liberar recarga al proveedor CentralOne
+// APROBAR ORDEN CONECTADO DIRECTAMENTE A CENTRALONE - SIN NINGÚN MODO DE RESPALDO
 app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     const orderId = req.params.id;
     const order = pendingOrders.find(o => o.id === orderId);
@@ -84,60 +65,66 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
         return res.status(404).json({ success: false, message: "Orden no encontrada" });
     }
     
-    order.status = "approved";
-    
+    let sku = "ff_110";
+    if (order.product.includes("Blood Strike")) {
+        sku = "bs_320";
+    } else if (order.product.includes("341 Diamantes")) {
+        sku = "ff_341";
+    }
+
+    console.log(`[CentralOne] Procesando orden ${order.id} para jugador ${order.player_id} con SKU ${sku}...`);
+
     try {
         const response = await axios.post(`${CO_BASE_URL}/orders`, {
             items: [
                 {
-                    product_sku: order.product.includes("Free Fire") ? "ff_110" : "bs_320",
+                    product_sku: sku,
                     quantity: 1,
                     target_payload: { player_id: order.player_id }
                 }
             ],
-            note: `Liberado por Admin Sokov MC Digital - Ref: ${order.payment_ref}`
+            note: `Sokov MC Digital - Ref: ${order.payment_ref}`
         }, {
             headers: {
                 'Authorization': `Bearer ${CO_API_KEY}`,
                 'Content-Type': 'application/json',
-                'Idempotency-Key': `sokov-approve-${order.id}`
+                'Idempotency-Key': `sokov-${order.id}`
             },
-            timeout: 10000
+            timeout: 20000
         });
-        console.log("Orden procesada en CentralOne:", response.data);
-        return res.json({ success: true, message: "Orden aprobada y recarga enviada a CentralOne", centralone_response: response.data });
+
+        order.status = "approved";
+        console.log("[CentralOne] ¡Recarga exitosa!", response.data);
+        return res.json({ 
+            success: true, 
+            message: "¡Recarga procesada y enviada al juego por CentralOne!", 
+            centralone_response: response.data 
+        });
+
     } catch (error) {
-        console.log("Simulación de aprobación exitosa con CentralOne (Modo respaldo)");
-        return res.json({ success: true, message: "Orden aprobada y recarga liberada (Modo respaldo exitoso)" });
+        console.error("[CentralOne Error]:", error.response ? error.response.data : error.message);
+        const errorMsg = error.response && error.response.data && error.response.data.message 
+            ? error.response.data.message 
+            : error.message;
+            
+        return res.status(500).json({ 
+            success: false, 
+            message: `Error CentralOne: ${errorMsg}` 
+        });
     }
 });
 
-// Endpoint Rechazar orden
 app.post('/api/v1/admin/reject-order/:id', (req, res) => {
     const orderId = req.params.id;
     const order = pendingOrders.find(o => o.id === orderId);
-    if (!order) {
-        return res.status(404).json({ success: false, message: "Orden no encontrada" });
-    }
+    if (!order) return res.status(404).json({ success: false, message: "No encontrada" });
     order.status = "rejected";
-    res.json({ success: true, message: "Orden rechazada correctamente" });
+    res.json({ success: true, message: "Pago rechazado correctamente" });
 });
 
-// Endpoint Validación de Jugador
 app.post('/api/v1/verify-player', async (req, res) => {
     const { player_id } = req.body;
-    if (!player_id) {
-        return res.status(400).json({ success: false, message: "Falta el ID del jugador" });
-    }
-    if (player_id === "10794160784") {
-        return res.json({ success: true, status: "valid", player_id: "10794160784", nickname: "~ TAK4 ~" });
-    }
-    res.json({
-        success: true,
-        status: "valid",
-        player_id: player_id,
-        nickname: `Jugador_${player_id.substring(0, 4)}`
-    });
+    res.json({ success: true, status: "valid", player_id: player_id, nickname: `Jugador_${player_id.substring(0, 4)}` });
 });
 
 app.listen(PORT, () => {
