@@ -3,18 +3,24 @@ const axios = require('axios');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const { createHmac, timingSafeEqual } = require("node:crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos (index.html, admin.html) desde la raíz si están juntos
+app.use(express.static(path.join(__dirname)));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Configuración de multer para guardar comprobantes de pago
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+        const fs = require('fs');
+        if (!fs.existsSync('uploads')) {
+            fs.mkdirSync('uploads');
+        }
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
@@ -46,7 +52,7 @@ const CO_BASE_URL = "https://portal.centraloneglobal.com/api/v1";
 app.post('/api/v1/submit-payment', upload.single('receipt'), (req, res) => {
     const { client_name, player_id, product, payment_method, payment_ref } = req.body;
     const receiptFile = req.file ? `/uploads/${req.file.filename}` : "https://via.placeholder.com/80";
-
+    
     const newOrder = {
         id: "ord_" + Math.random().toString(36).substring(2, 10),
         client_name: client_name || "Cliente Sokov",
@@ -58,10 +64,9 @@ app.post('/api/v1/submit-payment', upload.single('receipt'), (req, res) => {
         status: "pending",
         created_at: new Date().toISOString()
     };
-
+    
     pendingOrders.unshift(newOrder);
     console.log("Nuevo comprobante recibido:", newOrder);
-
     res.json({ success: true, message: "Comprobante recibido y en revisión", order: newOrder });
 });
 
@@ -74,15 +79,14 @@ app.get('/api/v1/admin/orders', (req, res) => {
 app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     const orderId = req.params.id;
     const order = pendingOrders.find(o => o.id === orderId);
-
+    
     if (!order) {
         return res.status(404).json({ success: false, message: "Orden no encontrada" });
     }
-
+    
     order.status = "approved";
-
+    
     try {
-        // Enviar orden real a CentralOne Global API para la recarga automática
         const response = await axios.post(`${CO_BASE_URL}/orders`, {
             items: [
                 {
@@ -100,7 +104,6 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
             },
             timeout: 10000
         });
-
         console.log("Orden procesada en CentralOne:", response.data);
         return res.json({ success: true, message: "Orden aprobada y recarga enviada a CentralOne", centralone_response: response.data });
     } catch (error) {
@@ -109,20 +112,26 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     }
 });
 
-// 5. Endpoint Validación de Jugador (/player/validate)
+// Endpoint Rechazar orden
+app.post('/api/v1/admin/reject-order/:id', (req, res) => {
+    const orderId = req.params.id;
+    const order = pendingOrders.find(o => o.id === orderId);
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Orden no encontrada" });
+    }
+    order.status = "rejected";
+    res.json({ success: true, message: "Orden rechazada correctamente" });
+});
+
+// Endpoint Validación de Jugador
 app.post('/api/v1/verify-player', async (req, res) => {
-    const { player_id, product_id, server } = req.body;
+    const { player_id } = req.body;
     if (!player_id) {
         return res.status(400).json({ success: false, message: "Falta el ID del jugador" });
     }
-
     if (player_id === "10794160784") {
-        return res.json({ success: true, status: "valid", player_id: "10794160784", nickname: "~☆TAK4☆~" });
+        return res.json({ success: true, status: "valid", player_id: "10794160784", nickname: "~ TAK4 ~" });
     }
-    if (player_id === "9419714061") {
-        return res.json({ success: true, status: "valid", player_id: "9419714061", nickname: " ℵltkMCLJ✨♑" });
-    }
-
     res.json({
         success: true,
         status: "valid",
@@ -132,5 +141,5 @@ app.post('/api/v1/verify-player', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor Sokov MC Digital cPanel Admin corriendo en puerto ${PORT}`);
+    console.log(`Servidor Sokov MC Digital corriendo en puerto ${PORT}`);
 });
