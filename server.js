@@ -1,60 +1,44 @@
-/**
- * ==============================================================================
- * SOKOV MC DIGITAL - SERVIDOR BACKEND OFICIAL (NODE.JS / EXPRESS)
- * Integración con Central One Global API para Recargas Automáticas
- * ==============================================================================
- */
-
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 
 const app = express();
-
-// Configuración de middlewares
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const CENTRAL_ONE_API_KEY = process.env.CENTRAL_ONE_API_KEY;
 
-// Ruta de verificación de estado del servidor
+// Ruta raíz para verificar estado
 app.get('/', (req, res) => {
-    res.json({ 
-        status: 'online', 
-        store: 'Sokov MC Digital', 
-        message: 'Servidor backend operando correctamente y conectado a Central One' 
-    });
+    res.json({ status: 'online', store: 'Sokov MC Digital' });
 });
 
-// Ruta principal para procesar recargas automáticas
-app.post('/api/recharge', async (req, res) => {
+// Ruta exactamente igual a la que llama el frontend (index.html)
+app.post('/api/crear-pedido', async (req, res) => {
     try {
-        const { playerId, optionId } = req.body;
+        const { catalog_item_id, player_id } = req.body;
 
-        // Validación de datos de entrada desde el frontend
-        if (!playerId || !optionId) {
+        if (!catalog_item_id || !player_id) {
             return res.status(400).json({
                 success: false,
-                message: 'Faltan parámetros obligatorios: playerId u optionId.'
+                message: 'Faltan parámetros: catalog_item_id o player_id.'
             });
         }
 
-        // Validación de la API Key en las variables de entorno de Render
         if (!CENTRAL_ONE_API_KEY) {
-            console.error('[ERROR CRÍTICO] La variable CENTRAL_ONE_API_KEY no está configurada.');
+            console.error('[ERROR] Falta CENTRAL_ONE_API_KEY en Render.');
             return res.status(500).json({
                 success: false,
-                message: 'Error de configuración interna del servidor.'
+                message: 'Error de configuración en el servidor backend.'
             });
         }
 
-        console.log(`[SOKOV MC] Iniciando recarga -> Jugador ID: ${playerId} | Producto ID: ${optionId}`);
+        console.log(`[PEDIDO] Producto: ${catalog_item_id} | Jugador ID: ${player_id}`);
 
-        // Estructura de la petición exigida por Central One Global API (v1/orders)
         const payload = {
-            product_id: optionId,
-            player_id: playerId
+            product_id: catalog_item_id,
+            player_id: player_id
         };
 
         const response = await fetch('https://api.centraloneglobal.com/v1/orders', {
@@ -68,12 +52,11 @@ app.post('/api/recharge', async (req, res) => {
         });
 
         const rawText = await response.text();
-        let responseData;
-
+        let data;
         try {
-            responseData = JSON.parse(rawText);
-        } catch (parseError) {
-            console.error('[ERROR] Respuesta no JSON recibida de Central One:', rawText);
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.error('[ERROR] Respuesta no JSON de Central One:', rawText);
             return res.status(502).json({
                 success: false,
                 message: 'El proveedor externo devolvió una respuesta no válida.',
@@ -81,39 +64,40 @@ app.post('/api/recharge', async (req, res) => {
             });
         }
 
-        // Si Central One rechaza la orden, registramos el detalle exacto
         if (!response.ok) {
-            console.error('=== RECHAZO DE CENTRAL ONE (INVALID REQUEST) ===');
-            console.error(JSON.stringify(responseData, null, 2));
-            console.error('================================================');
-
+            console.error('=== ERROR CENTRAL ONE ===', JSON.stringify(data, null, 2));
             return res.status(response.status).json({
                 success: false,
-                message: responseData.message || 'Central One rechazó la solicitud de orden.',
-                detail: responseData
+                message: data.message || 'Central One rechazó el pedido.',
+                detail: data
             });
         }
 
-        console.log('[ÉXITO] Orden procesada correctamente por Central One:', responseData);
-        return res.status(200).json({
+        console.log('[ÉXITO] Pedido creado:', data);
+        res.json({
             success: true,
-            message: 'Recarga procesada con éxito.',
-            data: responseData
+            order: data.order || data
         });
 
     } catch (error) {
-        console.error('[EXCEPCIÓN EN SERVIDOR]:', error.message);
-        return res.status(500).json({
+        console.error('[EXCEPCIÓN]:', error.message);
+        res.status(500).json({
             success: false,
-            message: 'Error interno en el servidor al procesar la recarga.',
+            message: 'Error interno en el servidor.',
             error: error.message
         });
     }
 });
 
-// Inicialización del servidor escuchando en el puerto asignado
+// Compatibilidad por si acaso con /api/recharge
+app.post('/api/recharge', async (req, res) => {
+    req.body.catalog_item_id = req.body.catalog_item_id || req.body.optionId;
+    req.body.player_id = req.body.player_id || req.body.playerId;
+    // Redirigir internamente o ejecutar misma lógica
+    // (Podemos delegar o dejarlo directo)
+    res.redirect(307, '/api/crear-pedido');
+});
+
 app.listen(PORT, () => {
-    console.log(`==================================================`);
-    console.log(` Sokov MC Digital Backend activo en puerto ${PORT} `);
-    console.log(`==================================================`);
+    console.log(`Servidor Sokov MC Digital activo en puerto ${PORT}`);
 });
