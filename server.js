@@ -18,15 +18,14 @@ app.post('/api/recharge', async (req, res) => {
             return res.status(500).json({ success: false, message: 'Configuración de API Key ausente en el servidor.' });
         }
 
-        console.log(`[PETICIÓN INICIADA] playerId: "${playerId}", optionId: "${optionId}"`);
+        console.log(`[PETICIÓN] Recibido playerId: "${playerId}", optionId: "${optionId}"`);
 
-        // Central One requiere la estructura específica en el body (ej: sku / external_id / target)
-        // Imprimimos exactamente la respuesta de error completa devuelta por el API
+        // Probemos enviando las variantes comunes que usan las APIs de recarga (product_id, sku, player_id, account_id, target)
         const payload = {
             product_id: optionId,
             player_id: playerId,
-            target: playerId,
-            sku: optionId
+            account_id: playerId,
+            target: playerId
         };
 
         const response = await fetch('https://api.centraloneglobal.com/v1/orders', {
@@ -40,9 +39,10 @@ app.post('/api/recharge', async (req, res) => {
         });
 
         const rawText = await response.text();
-        console.log('--- RESPUESTA CRUDA CENTRAL ONE ---');
+        console.log('--- RESPUESTA DE CENTRAL ONE ---');
+        console.log(`Status HTTP: ${response.status}`);
         console.log(rawText);
-        console.log('------------------------------------');
+        console.log('--------------------------------');
 
         let data;
         try {
@@ -50,7 +50,7 @@ app.post('/api/recharge', async (req, res) => {
         } catch (e) {
             return res.status(response.status).json({
                 success: false,
-                message: 'El proveedor devolvió una respuesta no válida.',
+                message: 'Respuesta no válida del proveedor',
                 rawResponse: rawText
             });
         }
@@ -58,16 +58,16 @@ app.post('/api/recharge', async (req, res) => {
         if (!response.ok) {
             return res.status(response.status).json({
                 success: false,
-                message: 'Error reportado por Central One',
+                message: data.message || 'Error al procesar la orden con Central One',
                 detail: data
             });
         }
 
-        console.log('[RECARGA EXITOSA]', data);
+        console.log('[ORDEN CREADA EXITOSAMENTE]', data);
         res.json({ success: true, data });
 
     } catch (error) {
-        console.error('[ERROR EN SERVIDOR]:', error.message);
+        console.error('[ERROR INTERNO]:', error.message);
         res.status(500).json({ success: false, message: 'Error interno en el servidor.', error: error.message });
     }
 });
