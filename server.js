@@ -24,7 +24,8 @@ app.post('/api/recharge', async (req, res) => {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${CENTRAL_ONE_API_KEY}`,
-                'Content-Type': 'json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 product_id: optionId,
@@ -32,7 +33,20 @@ app.post('/api/recharge', async (req, res) => {
             })
         });
 
-        const data = await response.json();
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.error('--- RESPUESTA NO-JSON RECIBIDA DE CENTRAL ONE ---');
+            console.error(rawText);
+            console.error('--------------------------------------------------');
+            return res.status(response.status).json({
+                success: false,
+                message: 'El proveedor devolvió una respuesta no válida (HTML/Texto).',
+                rawResponse: rawText.substring(0, 300)
+            });
+        }
 
         if (!response.ok) {
             console.log('--- DETALLE COMPLETO DE CAMPOS RECHAZADOS POR CENTRAL ONE ---');
