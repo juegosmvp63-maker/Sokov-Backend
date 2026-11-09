@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * SOKOV MC DIGITAL - SERVIDOR BACKEND OFICIAL (NODE.JS / EXPRESS)
- * Integración con Central One Global API (Estructura final corregida por logs)
+ * Integración con Central One Global API (Estructura final con target_payload como objeto)
  * ==============================================================================
  */
 
@@ -71,16 +71,18 @@ app.post('/api/crear-pedido', async (req, res) => {
 
         const idempotencyKey = crypto.randomUUID();
 
-        // Estructura exacta exigida por Central One según los últimos logs:
-        // - catalog_item_id (UUID del producto en vez de product_id)
+        // Estructura exacta exigida por Central One según los logs:
+        // - catalog_item_id (UUID del catálogo)
         // - quantity: 1
-        // - target_payload: player_id
+        // - target_payload como un OBJETO que contiene player_id
         const payload = {
             items: [
                 {
                     catalog_item_id: catalog_item_id,
                     quantity: 1,
-                    target_payload: player_id
+                    target_payload: {
+                        player_id: player_id
+                    }
                 }
             ]
         };
@@ -129,7 +131,7 @@ app.post('/api/crear-pedido', async (req, res) => {
             order: responseData.order || responseData
         });
 
-    } catch (error) {
+    } catch (error)catch (error) {
         console.error('[EXCEPCIÓN EN SERVIDOR]:', error.message);
         return res.status(500).json({
             success: false,
