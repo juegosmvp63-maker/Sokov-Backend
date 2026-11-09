@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * SOKOV MC DIGITAL - SERVIDOR BACKEND OFICIAL (NODE.JS / EXPRESS)
- * Integración con Central One Global API (Estructura final con target_payload como objeto)
+ * Integración con Central One Global API (Versión Oficial Definitiva)
  * ==============================================================================
  */
 
@@ -18,20 +18,20 @@ const PORT = process.env.PORT || 3000;
 const CENTRAL_ONE_API_KEY = process.env.CENTRAL_ONE_API_KEY;
 const CENTRAL_ONE_BASE_URL = 'https://portal.centraloneglobal.com/api/v1';
 
-// Ruta raíz
+// 1. Ruta raíz (Verificación de estado)
 app.get('/', (req, res) => {
     res.json({ 
         status: 'online', 
         store: 'Sokov MC Digital', 
-        message: 'Servidor backend operando correctamente' 
+        message: 'Servidor backend operando correctamente y conectado a Central One' 
     });
 });
 
-// Endpoint para consultar el catálogo de Central One y ver los UUIDs reales
+// 2. Endpoint para consultar el catálogo oficial de Central One
 app.get('/api/v1/catalog', async (req, res) => {
     try {
         if (!CENTRAL_ONE_API_KEY) {
-            return res.status(500).json({ success: false, message: 'Falta CENTRAL_ONE_API_KEY.' });
+            return res.status(500).json({ success: false, message: 'Falta CENTRAL_ONE_API_KEY en Render.' });
         }
         const response = await fetch(`${CENTRAL_ONE_BASE_URL}/catalog`, {
             method: 'GET',
@@ -47,10 +47,38 @@ app.get('/api/v1/catalog', async (req, res) => {
     }
 });
 
-// Ruta principal para procesar pedidos adaptada exactamente a los logs de Central One
+// 3. Endpoint para validar la cuenta/jugador en Central One
+app.post('/api/v1/player/validate', async (req, res) => {
+    try {
+        const { product_id, player_id } = req.body;
+        if (!product_id || !player_id) {
+            return res.status(400).json({ success: false, message: 'Faltan parámetros: product_id o player_id.' });
+        }
+
+        const response = await fetch(`${CENTRAL_ONE_BASE_URL}/player/validate`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${CENTRAL_ONE_API_KEY}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: product_id,
+                target_payload: { player_id: player_id }
+            })
+        });
+
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 4. Ruta principal para crear y procesar pedidos automáticamente
 app.post('/api/crear-pedido', async (req, res) => {
     try {
-        const { catalog_item_id, player_id } = req.body;
+        const { catalog_item_id, player_id, note } = req.body;
 
         if (!catalog_item_id || !player_id) {
             return res.status(400).json({
@@ -60,21 +88,18 @@ app.post('/api/crear-pedido', async (req, res) => {
         }
 
         if (!CENTRAL_ONE_API_KEY) {
-            console.error('[ERROR] Falta CENTRAL_ONE_API_KEY en Render.');
+            console.error('[ERROR CRÍTICO] La variable CENTRAL_ONE_API_KEY no está configurada en Render.');
             return res.status(500).json({
                 success: false,
-                message: 'Error de configuración en el servidor backend.'
+                message: 'Error de configuración en el servidor backend (API Key faltante).'
             });
         }
 
-        console.log(`[SOKOV MC] Procesando pedido -> Producto UUID: ${catalog_item_id} | Jugador ID: ${player_id}`);
+        console.log(`[SOKOV MC DIGITAL] Creando orden -> Producto UUID: ${catalog_item_id} | ID Jugador: ${player_id}`);
 
         const idempotencyKey = crypto.randomUUID();
 
-        // Estructura exacta exigida por Central One según los logs:
-        // - catalog_item_id (UUID del catálogo)
-        // - quantity: 1
-        // - target_payload como un OBJETO que contiene player_id
+        // Estructura exigida por la especificación oficial de Central One:
         const payload = {
             items: [
                 {
@@ -84,7 +109,8 @@ app.post('/api/crear-pedido', async (req, res) => {
                         player_id: player_id
                     }
                 }
-            ]
+            ],
+            note: note || 'Sokov MC Digital - Recarga Automatizada'
         };
 
         const response = await fetch(`${CENTRAL_ONE_BASE_URL}/orders`, {
@@ -104,7 +130,7 @@ app.post('/api/crear-pedido', async (req, res) => {
         try {
             responseData = JSON.parse(rawText);
         } catch (parseError) {
-            console.error('[ERROR] Respuesta no JSON de Central One:', rawText);
+            console.error('[ERROR] Respuesta no JSON recibida de Central One:', rawText);
             return res.status(502).json({
                 success: false,
                 message: 'El proveedor externo devolvió una respuesta no válida.',
@@ -124,14 +150,14 @@ app.post('/api/crear-pedido', async (req, res) => {
             });
         }
 
-        console.log('[ÉXITO] Orden procesada correctamente:', responseData);
+        console.log('[ÉXITO] Orden procesada correctamente por Central One:', responseData);
         return res.status(200).json({
             success: true,
             message: 'Recarga procesada con éxito.',
             order: responseData.order || responseData
         });
 
-    } catch (error)catch (error) {
+    } catch (error) {
         console.error('[EXCEPCIÓN EN SERVIDOR]:', error.message);
         return res.status(500).json({
             success: false,
@@ -141,13 +167,17 @@ app.post('/api/crear-pedido', async (req, res) => {
     }
 });
 
-// Ruta de compatibilidad
+// 5. Ruta de compatibilidad para peticiones legado
 app.post('/api/recharge', async (req, res) => {
     req.body.catalog_item_id = req.body.catalog_item_id || req.body.optionId;
     req.body.player_id = req.body.player_id || req.body.playerId;
     res.redirect(307, '/api/crear-pedido');
 });
 
+// Inicialización del servidor
 app.listen(PORT, () => {
-    console.log(`Servidor Sokov MC Digital activo en puerto ${PORT}`);
+    console.log(`==================================================`);
+    console.log(` Sokov MC Digital Backend activo en puerto ${PORT} `);
+    console.log(` Conectado a Central One Portal API v1            `);
+    console.log(`==================================================`);
 });
