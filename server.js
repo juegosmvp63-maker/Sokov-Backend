@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * SOKOV MC DIGITAL - SERVIDOR BACKEND OFICIAL (NODE.JS / EXPRESS)
- * Integración con Central One Global API (Estructura corregida según logs)
+ * Integración con Central One Global API (Estructura de Ordenes Actualizada)
  * ==============================================================================
  */
 
@@ -18,36 +18,22 @@ const PORT = process.env.PORT || 3000;
 const CENTRAL_ONE_API_KEY = process.env.CENTRAL_ONE_API_KEY;
 const CENTRAL_ONE_BASE_URL = 'https://portal.centraloneglobal.com/api/v1';
 
-// Ruta raíz para verificar estado
+// Ruta raíz
 app.get('/', (req, res) => {
     res.json({ 
         status: 'online', 
         store: 'Sokov MC Digital', 
-        message: 'Servidor backend operando correctamente y conectado a Central One' 
+        message: 'Servidor backend operando correctamente' 
     });
 });
 
-// Endpoint de Health
-app.get('/api/v1/health', async (req, res) => {
-    try {
-        const response = await fetch(`${CENTRAL_ONE_BASE_URL}/health`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-        });
-        const data = await response.json();
-        res.status(response.status).json(data);
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Endpoint de Ping
-app.get('/api/v1/ping', async (req, res) => {
+// Endpoint para consultar el catálogo de Central One y ver los UUIDs reales
+app.get('/api/v1/catalog', async (req, res) => {
     try {
         if (!CENTRAL_ONE_API_KEY) {
-            return res.status(500).json({ success: false, message: 'Falta CENTRAL_ONE_API_KEY en Render.' });
+            return res.status(500).json({ success: false, message: 'Falta CENTRAL_ONE_API_KEY.' });
         }
-        const response = await fetch(`${CENTRAL_ONE_BASE_URL}/ping`, {
+        const response = await fetch(`${CENTRAL_ONE_BASE_URL}/catalog`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${CENTRAL_ONE_API_KEY}`,
@@ -61,7 +47,7 @@ app.get('/api/v1/ping', async (req, res) => {
     }
 });
 
-// Ruta principal para procesar pedidos (ajustada a los requerimientos de los logs)
+// Ruta principal para procesar pedidos adaptada a la respuesta de los logs
 app.post('/api/crear-pedido', async (req, res) => {
     try {
         const { catalog_item_id, player_id } = req.body;
@@ -74,25 +60,27 @@ app.post('/api/crear-pedido', async (req, res) => {
         }
 
         if (!CENTRAL_ONE_API_KEY) {
-            console.error('[ERROR] La variable CENTRAL_ONE_API_KEY no está configurada.');
+            console.error('[ERROR] Falta CENTRAL_ONE_API_KEY en Render.');
             return res.status(500).json({
                 success: false,
-                message: 'Error de configuración interna del servidor.'
+                message: 'Error de configuración en el servidor backend.'
             });
         }
 
         console.log(`[SOKOV MC] Procesando pedido -> Producto: ${catalog_item_id} | Jugador ID: ${player_id}`);
 
-        // Estructura exigida por Central One según el reporte de logs:
-        // 1. Cabecera Idempotency-Key obligatoria
-        // 2. Arreglo "items" requerido en el payload
         const idempotencyKey = crypto.randomUUID();
 
+        // Estructura exacta requerida por Central One según los logs:
+        // - items array con quantity, product_id (UUID del catálogo) y target ({ player_id })
         const payload = {
             items: [
                 {
-                    product_id: catalog_item_id,
-                    player_id: player_id
+                    product_id: catalog_item_id, // UUID del producto en Central One
+                    quantity: 1,
+                    target: {
+                        player_id: player_id
+                    }
                 }
             ]
         };
