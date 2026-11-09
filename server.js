@@ -292,7 +292,6 @@ app.post('/api/v1/webhooks/deliveries', async (req, res) => {
     const timestamp = req.headers["x-centralone-timestamp"];
     const rawBody = req.rawBody || JSON.stringify(req.body);
 
-    // Si estás en producción y tienes CO_WEBHOOK_SECRET configurado, valida la firma
     if (process.env.CO_WEBHOOK_SECRET && !esDeCentralOne(CO_WEBHOOK_SECRET, timestamp, rawBody, signature)) {
         console.warn("Intento de webhook con firma inválida o no autorizada.");
         return res.status(401).json({ success: false, message: "Firma de webhook inválida" });
