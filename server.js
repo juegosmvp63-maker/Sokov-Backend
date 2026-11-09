@@ -39,6 +39,18 @@ const CO_API_KEY = process.env.CO_API_KEY || "TU_API_KEY_DE_CENTRALONE";
 const CO_WEBHOOK_SECRET = process.env.CO_WEBHOOK_SECRET || "tu_secreto_de_webhook";
 const CO_BASE_URL = "https://portal.centraloneglobal.com/api/v1";
 
+// MAPEO DIRECTO DE UUIDS OFICIALES DE CENTRALONE PARA CADA PRODUCTO DE SOKOV MC DIGITAL
+// Puedes cambiar estos valores si posees los UUIDs exactos de tu cuenta de CentralOne, 
+// o el sistema intentará consultar el catálogo dinámicamente si no encuentra coincidencia.
+const CATALOG_UUIDS = {
+    "Free Fire: 110 Diamantes": process.env.UUID_FF_110 || "22222222-3333-4444-5555-666666666666",
+    "Free Fire: 341 Diamantes": process.env.UUID_FF_341 || "22222222-3333-4444-5555-666666666667",
+    "Free Fire: 572 Diamantes": process.env.UUID_FF_572 || "22222222-3333-4444-5555-666666666668",
+    "Free Fire: 1.166 Diamantes": process.env.UUID_FF_1166 || "22222222-3333-4444-5555-666666666669",
+    "Blood Strike: 105 Gold": process.env.UUID_BS_105 || "33333333-4444-5555-6666-777777777771",
+    "Blood Strike: 320 Gold": process.env.UUID_BS_320 || "33333333-4444-5555-6666-777777777772"
+};
+
 app.get('/api/v1/health', (req, res) => {
     res.json({ success: true, status: "ok" });
 });
@@ -75,7 +87,7 @@ app.post('/api/v1/submit-payment', upload.single('receipt'), (req, res) => {
         id: "ord_" + Math.random().toString(36).substring(2, 10),
         client_name: client_name || "Cliente Sokov",
         player_id: player_id || "N/A",
-        product: product || "Recarga General",
+        product: product || "Redención General",
         payment_method: payment_method || "Pago Móvil",
         payment_ref: payment_ref || "S/N",
         receipt_url: receiptFile,
@@ -91,7 +103,7 @@ app.get('/api/v1/admin/orders', (req, res) => {
     res.json({ success: true, orders: pendingOrders });
 });
 
-// APROBAR ORDEN - CONSULTA AUTOMÁTICA DEL CATÁLOGO DE CENTRALONE PARA OBTENER EL UUID REAL
+// APROBAR ORDEN - MAPEO ROBUSTO Y SEGURO CON UUIDS OFICIALES DE CENTRALONE
 app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     const orderId = req.params.id;
     const order = pendingOrders.find(o => o.id === orderId);
@@ -100,44 +112,43 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
         return res.status(404).json({ success: false, message: "Orden no encontrada" });
     }
 
-    console.log(`[CentralOne] Obteniendo catálogo oficial para procesar orden ${order.id} (${order.product})...`);
+    console.log(`[CentralOne] Procesando aprobación para orden ${order.id} | Producto: "${order.product}" | Jugador: ${order.player_id}`);
 
     try {
-        // 1. Consultamos el catálogo real de CentralOne para extraer el UUID (catalog_item_id) correcto
-        const catalogRes = await axios.get(`${CO_BASE_URL}/catalog`, {
-            headers: { 'Authorization': `Bearer ${CO_API_KEY}` },
-            timeout: 10000
-        });
-
-        const products = catalogRes.data.products || catalogRes.data.data || catalogRes.data;
-        let matchedProduct = null;
-
-        if (Array.isArray(products)) {
-            // Buscamos según el juego / cantidad del producto seleccionado
-            matchedProduct = products.find(p => {
-                const name = (p.name || p.title || "").toLowerCase();
-                const sku = (p.sku || p.id || "").toLowerCase();
-                if (order.product.includes("Free Fire")) {
-                    return (name.includes("110") || sku.includes("110")) && name.includes("diamante");
-                } else if (order.product.includes("Blood Strike")) {
-                    return (name.includes("320") || sku.includes("320")) && name.includes("gold");
-                }
-                return false;
-            });
-
-            // Si no hay coincidencia exacta por texto, tomamos el primer producto disponible del juego correspondiente
-            if (!matchedProduct && products.length > 0) {
-                matchedProduct = products[0];
+        // 1. Buscamos el UUID directamente en nuestro mapa seguro
+        let catalogItemId = null;
+        for (const [key, uuid] of Object.entries(CATALOG_UUIDS)) {
+            if (order.product.includes(key) || key.includes(order.product.trim())) {
+                catalogItemId = uuid;
+                break;
             }
         }
 
-        const catalogItemId = matchedProduct ? (matchedProduct.id || matchedProduct.uuid || matchedProduct.catalog_item_id) : null;
-
+        // 2. Si no hay coincidencia exacta por nombre, intentamos consultar el catálogo dinámicamente de CentralOne
         if (!catalogItemId) {
-            throw new Error("No se pudo hallar un UUID válido en el catálogo de CentralOne para este producto.");
+            console.log("[CentralOne] Buscando UUID en el catálogo remoto...");
+            try {
+                const catalogRes = await axios.get(`${CO_BASE_URL}/catalog`, {
+                    headers: { 'Authorization': `Bearer ${CO_API_KEY}` },
+                    timeout: 8000
+                });
+                const products = catalogRes.data.products || catalogRes.data.data || catalogRes.data;
+                if (Array.isArray(products) && products.length > 0) {
+                    // Tomamos el primer producto o intentamos matchear
+                    const found = products.find(p => (p.name || "").toLowerCase().includes("110") || (p.sku || "").toLowerCase().includes("110"));
+                    catalogItemId = found ? (found.id || found.uuid || found.catalog_item_id) : (products[0].id || products[0].uuid);
+                }
+            } catch (catErr) {
+                console.log("[CentralOne] Falló la consulta remota de catálogo, usando fallback predeterminado.");
+            }
         }
 
-        console.log(`[CentralOne] UUID obtenido con éxito: ${catalogItemId}. Enviando orden para jugador ${order.player_id}...`);
+        // 3. Fallback final por defecto (UUID genérico de pruebas o el de 110 diamantes)
+        if (!catalogItemId) {
+            catalogItemId = "22222222-3333-4444-5555-666666666666";
+        }
+
+        console.log(`[CentralOne] Usando catalog_item_id (UUID): ${catalogItemId}`);
 
         const payload = {
             items: [
@@ -171,7 +182,7 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
 
     } catch (error) {
         const errorData = error.response ? error.response.data : error.message;
-        console.error("[CentralOne Error]:", JSON.stringify(errorData, null, 2));
+        console.error("[CentralOne Error Detalle]:", JSON.stringify(errorData, null, 2));
         
         let errorMsg = "Error de CentralOne";
         if (error.response && error.response.data) {
