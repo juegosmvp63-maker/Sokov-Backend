@@ -56,7 +56,7 @@ app.get('/api/v1/admin/orders', (req, res) => {
     res.json({ success: true, orders: pendingOrders });
 });
 
-// APROBAR ORDEN CONECTADO DIRECTAMENTE A CENTRALONE - SIN NINGÚN MODO DE RESPALDO
+// APROBAR ORDEN - ESTRUCTURA DIRECTA AJUSTADA PARA CENTRALONE GLOBAL
 app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     const orderId = req.params.id;
     const order = pendingOrders.find(o => o.id === orderId);
@@ -72,29 +72,28 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
         sku = "ff_341";
     }
 
-    console.log(`[CentralOne] Procesando orden ${order.id} para jugador ${order.player_id} con SKU ${sku}...`);
+    console.log(`[CentralOne] Procesando orden ${order.id} | Jugador: ${order.player_id} | SKU: ${sku}`);
 
     try {
-        const response = await axios.post(`${CO_BASE_URL}/orders`, {
-            items: [
-                {
-                    product_sku: sku,
-                    quantity: 1,
-                    target_payload: { player_id: order.player_id }
-                }
-            ],
-            note: `Sokov MC Digital - Ref: ${order.payment_ref}`
-        }, {
+        // Enviamos la petición con la estructura estándar de órdenes directas
+        const payload = {
+            sku: sku,
+            account: String(order.player_id).trim(),
+            player_id: String(order.player_id).trim(),
+            quantity: 1,
+            reference: `sokov-${order.id}`
+        };
+
+        const response = await axios.post(`${CO_BASE_URL}/orders`, payload, {
             headers: {
                 'Authorization': `Bearer ${CO_API_KEY}`,
-                'Content-Type': 'application/json',
-                'Idempotency-Key': `sokov-${order.id}`
+                'Content-Type': 'application/json'
             },
             timeout: 20000
         });
 
         order.status = "approved";
-        console.log("[CentralOne] ¡Recarga exitosa!", response.data);
+        console.log("[CentralOne] ¡Recarga enviada con éxito!", response.data);
         return res.json({ 
             success: true, 
             message: "¡Recarga procesada y enviada al juego por CentralOne!", 
@@ -102,10 +101,15 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("[CentralOne Error]:", error.response ? error.response.data : error.message);
-        const errorMsg = error.response && error.response.data && error.response.data.message 
-            ? error.response.data.message 
-            : error.message;
+        const errorData = error.response ? error.response.data : error.message;
+        console.error("[CentralOne Error]:", JSON.stringify(errorData, null, 2));
+        
+        let errorMsg = "Error de CentralOne";
+        if (error.response && error.response.data) {
+            errorMsg = error.response.data.message || JSON.stringify(error.response.data);
+        } else {
+            errorMsg = error.message;
+        }
             
         return res.status(500).json({ 
             success: false, 
