@@ -41,7 +41,7 @@ app.post('/api/crear-pedido', async (req, res) => {
             player_id: player_id
         };
 
-        const response = await fetch('https://api.centraloneglobal.com/v1/orders', {
+        const response = await fetch('https://centraloneglobal.com/api/v1/orders', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${CENTRAL_ONE_API_KEY}`,
@@ -93,8 +93,6 @@ app.post('/api/crear-pedido', async (req, res) => {
 app.post('/api/recharge', async (req, res) => {
     req.body.catalog_item_id = req.body.catalog_item_id || req.body.optionId;
     req.body.player_id = req.body.player_id || req.body.playerId;
-    // Redirigir internamente o ejecutar misma lógica
-    // (Podemos delegar o dejarlo directo)
     res.redirect(307, '/api/crear-pedido');
 });
 
