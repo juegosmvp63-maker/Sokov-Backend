@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * SOKOV MC DIGITAL - SERVIDOR BACKEND OFICIAL (NODE.JS / EXPRESS)
- * Integración con Central One Global API (Versión Oficial Definitiva)
+ * Integración con Central One Global API (Versión Producción Definitiva)
  * ==============================================================================
  */
 
@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 const CENTRAL_ONE_API_KEY = process.env.CENTRAL_ONE_API_KEY;
 const CENTRAL_ONE_BASE_URL = 'https://portal.centraloneglobal.com/api/v1';
 
-// 1. Ruta raíz (Verificación de estado)
+// 1. Ruta raíz para verificar estado del servidor backend
 app.get('/', (req, res) => {
     res.json({ 
         status: 'online', 
@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
     });
 });
 
-// 2. Endpoint para consultar el catálogo oficial de Central One
+// 2. Endpoint para consultar el catálogo oficial de productos (UUIDs)
 app.get('/api/v1/catalog', async (req, res) => {
     try {
         if (!CENTRAL_ONE_API_KEY) {
@@ -47,7 +47,7 @@ app.get('/api/v1/catalog', async (req, res) => {
     }
 });
 
-// 3. Endpoint para validar la cuenta/jugador en Central One
+// 3. Endpoint opcional para validar cuenta / jugador
 app.post('/api/v1/player/validate', async (req, res) => {
     try {
         const { product_id, player_id } = req.body;
@@ -75,7 +75,7 @@ app.post('/api/v1/player/validate', async (req, res) => {
     }
 });
 
-// 4. Ruta principal para crear y procesar pedidos automáticamente
+// 4. Ruta principal para crear y procesar pedidos automáticos
 app.post('/api/crear-pedido', async (req, res) => {
     try {
         const { catalog_item_id, player_id, note } = req.body;
@@ -91,15 +91,15 @@ app.post('/api/crear-pedido', async (req, res) => {
             console.error('[ERROR CRÍTICO] La variable CENTRAL_ONE_API_KEY no está configurada en Render.');
             return res.status(500).json({
                 success: false,
-                message: 'Error de configuración en el servidor backend (API Key faltante).'
+                message: 'Error de configuración interna del servidor (API Key faltante).'
             });
         }
 
-        console.log(`[SOKOV MC DIGITAL] Creando orden -> Producto UUID: ${catalog_item_id} | ID Jugador: ${player_id}`);
+        console.log(`[SOKOV MC DIGITAL] Creando orden -> UUID: ${catalog_item_id} | ID Jugador: ${player_id}`);
 
         const idempotencyKey = crypto.randomUUID();
 
-        // Estructura exigida por la especificación oficial de Central One:
+        // Payload estricto según la especificación oficial de Central One
         const payload = {
             items: [
                 {
@@ -167,7 +167,7 @@ app.post('/api/crear-pedido', async (req, res) => {
     }
 });
 
-// 5. Ruta de compatibilidad para peticiones legado
+// 5. Ruta de compatibilidad para peticiones antiguas
 app.post('/api/recharge', async (req, res) => {
     req.body.catalog_item_id = req.body.catalog_item_id || req.body.optionId;
     req.body.player_id = req.body.player_id || req.body.playerId;
