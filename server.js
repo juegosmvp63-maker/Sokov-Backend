@@ -39,14 +39,6 @@ const CO_API_KEY = process.env.CO_API_KEY || "TU_API_KEY_DE_CENTRALONE";
 const CO_WEBHOOK_SECRET = process.env.CO_WEBHOOK_SECRET || "tu_secreto_de_webhook";
 const CO_BASE_URL = "https://portal.centraloneglobal.com/api/v1";
 
-// Mapeo de SKUs a los UUIDs / catalog_item_id reales de CentralOne
-// Puedes colocar los catalog_item_id reales de tu cuenta de CentralOne si los tienes
-const CATALOG_ITEM_IDS = {
-    "ff_110": process.env.CO_FF_110_ID || "ff-110-diamonds-uuid",
-    "ff_341": process.env.CO_FF_341_ID || "ff-341-diamonds-uuid",
-    "bs_320": process.env.CO_BS_320_ID || "bs-320-gold-uuid"
-};
-
 app.get('/api/v1/health', (req, res) => {
     res.json({ success: true, status: "ok" });
 });
@@ -99,7 +91,7 @@ app.get('/api/v1/admin/orders', (req, res) => {
     res.json({ success: true, orders: pendingOrders });
 });
 
-// APROBAR ORDEN - USA catalog_item_id EN LUGAR DE product_sku
+// APROBAR ORDEN - CONSULTA AUTOMÁTICA DEL CATÁLOGO DE CENTRALONE PARA OBTENER EL UUID REAL
 app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     const orderId = req.params.id;
     const order = pendingOrders.find(o => o.id === orderId);
@@ -107,17 +99,46 @@ app.post('/api/v1/admin/approve-order/:id', async (req, res) => {
     if (!order) {
         return res.status(404).json({ success: false, message: "Orden no encontrada" });
     }
-    
-    let catalogItemId = CATALOG_ITEM_IDS["ff_110"];
-    if (order.product.includes("Blood Strike")) {
-        catalogItemId = CATALOG_ITEM_IDS["bs_320"];
-    } else if (order.product.includes("341 Diamantes")) {
-        catalogItemId = CATALOG_ITEM_IDS["ff_341"];
-    }
 
-    console.log(`[CentralOne] Procesando orden ${order.id} | Jugador: ${order.player_id} | catalog_item_id: ${catalogItemId}`);
+    console.log(`[CentralOne] Obteniendo catálogo oficial para procesar orden ${order.id} (${order.product})...`);
 
     try {
+        // 1. Consultamos el catálogo real de CentralOne para extraer el UUID (catalog_item_id) correcto
+        const catalogRes = await axios.get(`${CO_BASE_URL}/catalog`, {
+            headers: { 'Authorization': `Bearer ${CO_API_KEY}` },
+            timeout: 10000
+        });
+
+        const products = catalogRes.data.products || catalogRes.data.data || catalogRes.data;
+        let matchedProduct = null;
+
+        if (Array.isArray(products)) {
+            // Buscamos según el juego / cantidad del producto seleccionado
+            matchedProduct = products.find(p => {
+                const name = (p.name || p.title || "").toLowerCase();
+                const sku = (p.sku || p.id || "").toLowerCase();
+                if (order.product.includes("Free Fire")) {
+                    return (name.includes("110") || sku.includes("110")) && name.includes("diamante");
+                } else if (order.product.includes("Blood Strike")) {
+                    return (name.includes("320") || sku.includes("320")) && name.includes("gold");
+                }
+                return false;
+            });
+
+            // Si no hay coincidencia exacta por texto, tomamos el primer producto disponible del juego correspondiente
+            if (!matchedProduct && products.length > 0) {
+                matchedProduct = products[0];
+            }
+        }
+
+        const catalogItemId = matchedProduct ? (matchedProduct.id || matchedProduct.uuid || matchedProduct.catalog_item_id) : null;
+
+        if (!catalogItemId) {
+            throw new Error("No se pudo hallar un UUID válido en el catálogo de CentralOne para este producto.");
+        }
+
+        console.log(`[CentralOne] UUID obtenido con éxito: ${catalogItemId}. Enviando orden para jugador ${order.player_id}...`);
+
         const payload = {
             items: [
                 {
