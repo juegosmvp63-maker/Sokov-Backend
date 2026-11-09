@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * SOKOV MC DIGITAL - SERVIDOR BACKEND OFICIAL (NODE.JS / EXPRESS)
- * Integración con Central One Global API (Estructura de Ordenes Actualizada)
+ * Integración con Central One Global API (Estructura final corregida por logs)
  * ==============================================================================
  */
 
@@ -47,7 +47,7 @@ app.get('/api/v1/catalog', async (req, res) => {
     }
 });
 
-// Ruta principal para procesar pedidos adaptada a la respuesta de los logs
+// Ruta principal para procesar pedidos adaptada exactamente a los logs de Central One
 app.post('/api/crear-pedido', async (req, res) => {
     try {
         const { catalog_item_id, player_id } = req.body;
@@ -67,20 +67,20 @@ app.post('/api/crear-pedido', async (req, res) => {
             });
         }
 
-        console.log(`[SOKOV MC] Procesando pedido -> Producto: ${catalog_item_id} | Jugador ID: ${player_id}`);
+        console.log(`[SOKOV MC] Procesando pedido -> Producto UUID: ${catalog_item_id} | Jugador ID: ${player_id}`);
 
         const idempotencyKey = crypto.randomUUID();
 
-        // Estructura exacta requerida por Central One según los logs:
-        // - items array con quantity, product_id (UUID del catálogo) y target ({ player_id })
+        // Estructura exacta exigida por Central One según los últimos logs:
+        // - catalog_item_id (UUID del producto en vez de product_id)
+        // - quantity: 1
+        // - target_payload: player_id
         const payload = {
             items: [
                 {
-                    product_id: catalog_item_id, // UUID del producto en Central One
+                    catalog_item_id: catalog_item_id,
                     quantity: 1,
-                    target: {
-                        player_id: player_id
-                    }
+                    target_payload: player_id
                 }
             ]
         };
