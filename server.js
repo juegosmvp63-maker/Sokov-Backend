@@ -18,7 +18,16 @@ app.post('/api/recharge', async (req, res) => {
             return res.status(500).json({ success: false, message: 'Configuración de API Key ausente en el servidor.' });
         }
 
-        console.log(`[PETICIÓN INICIADA] Procesando recarga para ID: ${playerId}, Opción: ${optionId}`);
+        console.log(`[PETICIÓN INICIADA] playerId: "${playerId}", optionId: "${optionId}"`);
+
+        // Central One requiere la estructura específica en el body (ej: sku / external_id / target)
+        // Imprimimos exactamente la respuesta de error completa devuelta por el API
+        const payload = {
+            product_id: optionId,
+            player_id: playerId,
+            target: playerId,
+            sku: optionId
+        };
 
         const response = await fetch('https://api.centraloneglobal.com/v1/orders', {
             method: 'POST',
@@ -27,35 +36,29 @@ app.post('/api/recharge', async (req, res) => {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                product_id: optionId,
-                player_id: playerId
-            })
+            body: JSON.stringify(payload)
         });
 
         const rawText = await response.text();
+        console.log('--- RESPUESTA CRUDA CENTRAL ONE ---');
+        console.log(rawText);
+        console.log('------------------------------------');
+
         let data;
         try {
             data = JSON.parse(rawText);
         } catch (e) {
-            console.error('--- RESPUESTA NO-JSON RECIBIDA DE CENTRAL ONE ---');
-            console.error(rawText);
-            console.error('--------------------------------------------------');
             return res.status(response.status).json({
                 success: false,
-                message: 'El proveedor devolvió una respuesta no válida (HTML/Texto).',
-                rawResponse: rawText.substring(0, 300)
+                message: 'El proveedor devolvió una respuesta no válida.',
+                rawResponse: rawText
             });
         }
 
         if (!response.ok) {
-            console.log('--- DETALLE COMPLETO DE CAMPOS RECHAZADOS POR CENTRAL ONE ---');
-            console.log(JSON.stringify(data, null, 2));
-            console.log('------------------------------------------------------------');
-            
             return res.status(response.status).json({
                 success: false,
-                message: 'Error en la respuesta del proveedor.',
+                message: 'Error reportado por Central One',
                 detail: data
             });
         }
