@@ -7,22 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-dotenv.config();  if (action === 'approve') {
-    // Limpiamos el nombre del paquete para extraer solo los diamantes u oro o enviamos un SKU genérico válido
-    // Central One espera un formato limpio de producto o ID de recarga directa
-    const coOrderPayload = {
-      product_sku: order.package_name.split(' ')[0], // Toma la cantidad limpia (ej: "110")
-      player_id: order.player_id,
-      game: order.game
-    };
-
-    const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
-    const apiResponse = await callCentralOne('/orders', {
-      method: 'POST',
-      headers: { 'Idempotency-Key': idempotencyKey },
-      body: JSON.stringify(coOrderPayload)
-    });
-  
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,10 +91,8 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
 
   if (action === 'approve') {
-    // Mapeo inteligente o envío de orden a Central One Global
-    // Nota: Asegúrate de que el paquete tenga el product_id / sku correcto de Central One o lo mandamos genérico
     const coOrderPayload = {
-      product_sku: order.package_name, // O el identificador que use Central One
+      product_sku: order.package_name.split(' ')[0],
       player_id: order.player_id,
       game: order.game
     };
@@ -122,7 +105,6 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
     });
 
     if (apiResponse.success === false) {
-      // Si la API del proveedor falla, guardamos el error en la orden para que lo veas
       order.status = 'error_provider';
       order.provider_error = apiResponse.error;
       return res.status(400).json({ 
@@ -192,6 +174,5 @@ app.post('/api/webhooks/receive', express.raw({ type: 'application/json' }), (re
 });
 
 app.listen(PORT, () => {
-  console.gt = console.log;
   console.log(`SokovmcDigital Backend corriendo en http://localhost:${PORT}`);
 });
