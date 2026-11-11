@@ -71,7 +71,6 @@ async function callCentralOne(endpoint, options = {}) {
 // STORE & ADMIN ENDPOINTS (SokovmcDigital)
 // ==========================================
 
-// Registrar pedido desde la tienda web
 app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
   const { game, package_name, player_id, phone, payment_method, reference } = req.body;
   const receiptUrl = req.file ? `/uploads/${req.file.filename}` : null;
@@ -93,12 +92,11 @@ app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
   res.json({ success: true, message: 'Pedido registrado con éxito en SokovmcDigital', order: newOrder });
 });
 
-// Listar pedidos para el panel admin
 app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// APROBAR O RECHAZAR PEDIDO
+// APROBAR PEDIDO CON MAPEO EXACTO DE PRODUCT_ID (UUID) DESDE EL CATÁLOGO
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -108,61 +106,57 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
 
   if (action === 'approve') {
     try {
-      // 1. Consultar el catálogo oficial para obtener el UUID exacto (catalog_item_id)
+      // 1. Obtener el catálogo oficial de Central One
       const catalogRes = await callCentralOne('/catalog');
       
       let catalogUuid = null;
       if (catalogRes) {
-        // Manejar posibles estructuras de respuesta del catálogo de Central One
-        const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.data || catalogRes.items || catalogRes.catalog || []);
-        if (Array.isArray(itemsList)) {
+        // Estructura del JSON que compartiste: { items: [ { product_id, sku, name, ... } ] }
+        const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.items || catalogRes.data || []);
+        
+        if (Array.isArray(itemsList) && itemsList.length > 0) {
           const searchKey = (order.package_name || '').trim().toLowerCase();
           
-          // Buscar coincidencia exacta o por inclusión del nombre/SKU/ID
+          // Buscar coincidencia por SKU, nombre o product_id
           const matchedItem = itemsList.find(item => {
-            const itemId = (item.id || item.catalog_item_id || '').toString().toLowerCase();
-            const itemName = (item.name || item.title || item.product_name || '').toString().toLowerCase();
-            const itemSku = (item.sku || item.product_sku || '').toString().toLowerCase();
-            
-            return itemId.includes(searchKey) || searchKey.includes(itemId) || 
-                   itemName.includes(searchKey) || searchKey.includes(itemName) ||
-                   itemSku.includes(searchKey);
+            const prodId = (item.product_id || item.id || '').toString().toLowerCase();
+            const sku = (item.sku || '').toString().toLowerCase();
+            const name = (item.name || '').toString().toLowerCase();
+
+            return searchKey.includes(sku) || sku.includes(searchKey) ||
+                   searchKey.includes(name) || name.includes(searchKey) ||
+                   prodId === searchKey;
           });
 
           if (matchedItem) {
-            catalogUuid = matchedItem.id || matchedItem.catalog_item_id;
-          } else if (itemsList.length > 0) {
-            // Fallback inteligente: si hay elementos, tomar el primero o buscar por número extraído
-            const numbersOnly = searchKey.replace(/[^0-9]/g, '');
-            const fallbackItem = itemsList.find(item => {
-              const name = (item.name || item.title || '').toString();
-              return numbersOnly && name.includes(numbersOnly);
-            });
-            if (fallbackItem) {
-              catalogUuid = fallbackItem.id || fallbackItem.catalog_item_id;
-            } else {
-              catalogUuid = itemsList[0].id || itemsList[0].catalog_item_id;
-            }
+            catalogUuid = matchedItem.product_id || matchedItem.id;
+          } else {
+            // Si no hay coincidencia exacta de texto, tomar el primer producto disponible de la familia o del catálogo
+            catalogUuid = itemsList[0].product_id || itemsList[0].id;
           }
         }
       }
 
-      // Si aun así no se obtiene UUID, usar el string limpio como fallback extremo
-      const finalCatalogItemId = catalogUuid || order.package_name.trim().split(' ')[0];
+      if (!catalogUuid) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'No se pudo encontrar el UUID (product_id) del producto en el catálogo de Central One.' 
+        });
+      }
 
-      // 2. Construir la estructura exacta exigida por Central One Global API
+      // 2. Construir la orden con el formato exacto requerido: items[0].catalog_item_id
       const coOrderPayload = {
         game: order.game,
         player_id: order.player_id,
         items: [
           {
-            catalog_item_id: finalCatalogItemId,
+            catalog_item_id: catalogUuid,
             quantity: 1
           }
         ]
       };
 
-      console.log("Enviando orden a Central One con payload:", JSON.stringify(coOrderPayload));
+      console.log("Enviando orden a Central One con UUID exacto:", JSON.stringify(coOrderPayload));
 
       const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
       const apiResponse = await callCentralOne('/orders', {
@@ -188,7 +182,7 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
       return res.json({ success: true, order, apiResponse });
 
     } catch (err) {
-      console.error("Excepción crítica al aprobar orden:", err);
+      console.error("Excepción al aprobar orden:", err);
       return res.status(500).json({ success: false, error: err.message });
     }
   } else {
@@ -198,32 +192,17 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
 });
 
 // ==========================================
-// CENTRAL ONE API PROXY ENDPOINTS (COMPLETOS)
+// PROXY DE ENDPOINTS DE CENTRAL ONE
 // ==========================================
-
-// Balance
-app.get('/api/balance', async (req, res) => {
-  res.json(await callCentralOne('/balance'));
-});
-
-// Catalog
-app.get('/api/catalog', async (req, res) => {
-  res.json(await callCentralOne('/catalog'));
-});
-
-// Player Validation
+app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
+app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
 app.post('/api/player/validate', async (req, res) => {
   res.json(await callCentralOne('/player/validate', {
     method: 'POST',
     body: JSON.stringify(req.body)
   }));
 });
-
-app.get('/api/player/validate/coverage', async (req, res) => {
-  res.json(await callCentralOne('/player/validate/coverage'));
-});
-
-// Orders Management
+app.get('/api/player/validate/coverage', async (req, res) => res.json(await callCentralOne('/player/validate/coverage')));
 app.post('/api/orders', async (req, res) => {
   const idempotencyKey = req.headers['idempotency-key'] || `order-${Date.now()}`;
   res.json(await callCentralOne('/orders', {
@@ -232,42 +211,18 @@ app.post('/api/orders', async (req, res) => {
     body: JSON.stringify(req.body)
   }));
 });
-
-app.get('/api/orders', async (req, res) => {
-  res.json(await callCentralOne('/orders'));
-});
-
-app.get('/api/orders/:id', async (req, res) => {
-  res.json(await callCentralOne(`/orders/${req.params.id}`));
-});
-
-app.get('/api/orders/:id/codes', async (req, res) => {
-  res.json(await callCentralOne(`/orders/${req.params.id}/codes`));
-});
-
-// Webhooks Management
-app.get('/api/webhooks', async (req, res) => {
-  res.json(await callCentralOne('/webhooks'));
-});
-
-app.get('/api/webhooks/deliveries', async (req, res) => {
-  res.json(await callCentralOne('/webhooks/deliveries'));
-});
-
+app.get('/api/orders', async (req, res) => res.json(await callCentralOne('/orders')));
+app.get('/api/orders/:id', async (req, res) => res.json(await callCentralOne(`/orders/${req.params.id}`)));
+app.get('/api/orders/:id/codes', async (req, res) => res.json(await callCentralOne(`/orders/${req.params.id}/codes`)));
+app.get('/api/webhooks', async (req, res) => res.json(await callCentralOne('/webhooks')));
+app.get('/api/webhooks/deliveries', async (req, res) => res.json(await callCentralOne('/webhooks/deliveries')));
 app.post('/api/webhooks/test', async (req, res) => {
-  res.json(await callCentralOne('/webhooks/test', {
-    method: 'POST',
-    body: JSON.stringify(req.body || {})
-  }));
+  res.json(await callCentralOne('/webhooks/test', { method: 'POST', body: JSON.stringify(req.body || {}) }));
 });
-
 app.post('/api/webhooks/deliveries/:id/replay', async (req, res) => {
-  res.json(await callCentralOne(`/webhooks/deliveries/${req.params.id}/replay`, {
-    method: 'POST'
-  }));
+  res.json(await callCentralOne(`/webhooks/deliveries/${req.params.id}/replay`, { method: 'POST' }));
 });
 
-// Webhook Receiver (Incoming from Central One)
 app.post('/api/webhooks/receive', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-centralone-signature'];
   const timestamp = req.headers['x-centralone-timestamp'];
@@ -284,7 +239,7 @@ app.post('/api/webhooks/receive', express.raw({ type: 'application/json' }), (re
       return res.status(401).json({ error: 'Firma inválida' });
     }
   } catch (e) {
-    return res.status(401).json({ error: 'Firma inválida o malformada' });
+    return res.status(401).json({ error: 'Firma inválida' });
   }
 
   const eventPayload = JSON.parse(rawBody.toString('utf8'));
