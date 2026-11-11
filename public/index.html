@@ -94,6 +94,7 @@
     <!-- Formulario de Pedido -->
     <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <input type="hidden" id="selected-game" value="Free Fire">
+      <input type="hidden" id="player_region" value="">
       
       <div class="flex items-center justify-between bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800">
         <span class="text-xs text-slate-400">Juego Seleccionado:</span>
@@ -102,14 +103,21 @@
 
       <div>
         <label class="block text-xs font-semibold mb-1 text-slate-300">🎮 ID de Jugador del Juego</label>
-        <input type="text" id="player_id" required placeholder="Ingresa tu ID de usuario aquí" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+        <div class="flex gap-2">
+          <input type="text" id="player_id" required placeholder="Ingresa tu ID de usuario aquí" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+          <button type="button" onclick="validarJugador()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 rounded-xl shadow transition whitespace-nowrap active:scale-95">
+            🔍 Verificar
+          </button>
+        </div>
+        <div id="player-info-box" class="hidden mt-2 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+          <div id="player-status" class="font-bold"></div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold mb-1 text-slate-300">📦 Paquete o Recarga a Comprar</label>
           <select id="package_name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500">
-            <!-- Se llena dinámicamente -->
           </select>
         </div>
         <div>
@@ -179,6 +187,8 @@
 
     function seleccionarJuego(juego) {
       document.getElementById('selected-game').value = juego;
+      document.getElementById('player-info-box').classList.add('hidden');
+      document.getElementById('player_region').value = '';
       const selectPkg = document.getElementById('package_name');
       selectPkg.innerHTML = '';
 
@@ -213,6 +223,53 @@
 
     seleccionarJuego('Free Fire');
 
+    async function validarJugador() {
+      const playerId = document.getElementById('player_id').value.trim();
+      const game = document.getElementById('selected-game').value;
+      const infoBox = document.getElementById('player-info-box');
+      const statusDiv = document.getElementById('player-status');
+      const regionInput = document.getElementById('player_region');
+
+      if (!playerId) {
+        alert('Por favor ingresa primero el ID de Jugador.');
+        return;
+      }
+
+      infoBox.classList.remove('hidden');
+      statusDiv.className = 'font-bold text-yellow-400';
+      statusDiv.innerText = 'Consultando nombre y región en servidor...';
+
+      try {
+        const res = await fetch('/api/player/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            game: game.toLowerCase().replace(' ', '-'),
+            player_id: playerId
+          })
+        });
+
+        const data = await res.json();
+
+        if (data && (data.nickname || data.player_name || data.name || (data.data && data.data.nickname))) {
+          const info = data.data || data;
+          const nombre = info.nickname || info.player_name || info.name || 'Jugador Encontrado';
+          const region = info.region || info.server || 'LATAM / GLOBAL';
+
+          statusDiv.className = 'font-bold text-emerald-400';
+          statusDiv.innerHTML = `✅ Nombre: <span class="text-white">${nombre}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">${region}</span>`;
+          regionInput.value = region;
+        } else {
+          statusDiv.className = 'font-bold text-rose-400';
+          statusDiv.innerText = '❌ ID no encontrado o región no soportada por el proveedor.';
+          regionInput.value = '';
+        }
+      } catch (err) {
+        statusDiv.className = 'font-bold text-rose-400';
+        statusDiv.innerText = '⚠️ Error al conectar con el validador.';
+      }
+    }
+
     function copiarPagoMovil() {
       const texto = "Banco: 0191\nCédula: 27796384\nTeléfono: 04128043503";
       navigator.clipboard.writeText(texto);
@@ -230,6 +287,7 @@
       const formData = new FormData();
       formData.append('game', document.getElementById('selected-game').value);
       formData.append('player_id', document.getElementById('player_id').value);
+      formData.append('server', document.getElementById('player_region').value);
       formData.append('package_name', document.getElementById('package_name').value);
       formData.append('phone', document.getElementById('phone').value);
       formData.append('payment_method', document.getElementById('payment_method').value);
@@ -241,6 +299,7 @@
       if(data.success) {
         alert('¡Pedido enviado con éxito a SokovmcDigital! Será procesado tras verificar el comprobante.');
         document.getElementById('order-form').reset();
+        document.getElementById('player-info-box').classList.add('hidden');
       } else {
         alert('Error al procesar el pedido.');
       }
