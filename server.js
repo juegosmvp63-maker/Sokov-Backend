@@ -72,7 +72,7 @@ async function callCentralOne(endpoint, options = {}) {
 // ==========================================
 
 app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
-  const { game, package_name, player_id, phone, payment_method, reference } = req.body;
+  const { game, package_name, player_id, server, zone, phone, payment_method, reference } = req.body;
   const receiptUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   const newOrder = {
@@ -80,6 +80,7 @@ app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
     game,
     package_name,
     player_id,
+    server: server || zone || null,
     phone,
     payment_method,
     reference: reference || 'N/A',
@@ -96,7 +97,7 @@ app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// APROBAR PEDIDO CON MAPEO EXACTO DE PRODUCT_ID (UUID) DESDE EL CATÁLOGO
+// APROBAR PEDIDO CON MAPEO EXACTO DE PRODUCT_ID (UUID) Y TARGET_FIELDS (PLAYER_ID / SERVER)
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -110,15 +111,15 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
       const catalogRes = await callCentralOne('/catalog');
       
       let catalogUuid = null;
+      let matchedProduct = null;
+
       if (catalogRes) {
-        // Estructura del JSON que compartiste: { items: [ { product_id, sku, name, ... } ] }
         const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.items || catalogRes.data || []);
         
         if (Array.isArray(itemsList) && itemsList.length > 0) {
           const searchKey = (order.package_name || '').trim().toLowerCase();
           
-          // Buscar coincidencia por SKU, nombre o product_id
-          const matchedItem = itemsList.find(item => {
+          matchedProduct = itemsList.find(item => {
             const prodId = (item.product_id || item.id || '').toString().toLowerCase();
             const sku = (item.sku || '').toString().toLowerCase();
             const name = (item.name || '').toString().toLowerCase();
@@ -128,11 +129,17 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
                    prodId === searchKey;
           });
 
-          if (matchedItem) {
-            catalogUuid = matchedItem.product_id || matchedItem.id;
-          } else {
-            // Si no hay coincidencia exacta de texto, tomar el primer producto disponible de la familia o del catálogo
-            catalogUuid = itemsList[0].product_id || itemsList[0].id;
+          if (!matchedProduct) {
+            const numbersOnly = searchKey.replace(/[^0-9]/g, '');
+            matchedProduct = itemsList.find(item => {
+              const name = (item.name || '').toString();
+              const sku = (item.sku || '').toString();
+              return numbersOnly && (name.includes(numbersOnly) || sku.includes(numbersOnly));
+            }) || itemsList[0];
+          }
+
+          if (matchedProduct) {
+            catalogUuid = matchedProduct.product_id || matchedProduct.id;
           }
         }
       }
@@ -144,19 +151,43 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
         });
       }
 
-      // 2. Construir la orden con el formato exacto requerido: items[0].catalog_item_id
+      // 2. Preparar objeto target dinámico según target_fields del catálogo (player_id, server, etc.)
+      const targetData = {
+        player_id: (order.player_id || '').toString().trim()
+      };
+
+      if (order.server) {
+        targetData.server = order.server.toString().trim();
+      } else if (matchedProduct && Array.isArray(matchedProduct.target_fields) && matchedProduct.target_fields.includes('server')) {
+        // Si el producto exige server y no se especificó, intentar extraer de player_id si viene separado por guion/paréntesis o asignar default si existe
+        if (targetData.player_id.includes('-')) {
+          const parts = targetData.player_id.split('-');
+          targetData.player_id = parts[0].trim();
+          targetData.server = parts[1].trim();
+        } else if (matchedProduct.target_schema) {
+          const serverSchema = matchedProduct.target_schema.find(f => f.key === 'server');
+          if (serverSchema && Array.isArray(serverSchema.options) && serverSchema.options.length > 0) {
+            targetData.server = serverSchema.options[0].value;
+          }
+        }
+      }
+
+      // 3. Construir la orden con la estructura oficial completa de Central One Global
       const coOrderPayload = {
         game: order.game,
-        player_id: order.player_id,
+        player_id: targetData.player_id,
+        ...(targetData.server ? { server: targetData.server } : {}),
+        target: targetData,
         items: [
           {
             catalog_item_id: catalogUuid,
-            quantity: 1
+            quantity: 1,
+            target: targetData
           }
         ]
       };
 
-      console.log("Enviando orden a Central One con UUID exacto:", JSON.stringify(coOrderPayload));
+      console.log("Enviando orden a Central One con payload completo:", JSON.stringify(coOrderPayload));
 
       const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
       const apiResponse = await callCentralOne('/orders', {
@@ -192,7 +223,7 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
 });
 
 // ==========================================
-// PROXY DE ENDPOINTS DE CENTRAL ONE
+// PROXY DE ENDPOINTS DE CENTRAL ONE (COMPLETOS)
 // ==========================================
 app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
 app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
