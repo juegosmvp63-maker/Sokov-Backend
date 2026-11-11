@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokovmcDigital - Tienda Oficial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-slate-950 text-white font-sans min-h-screen pb-24">
+
+  <!-- Banner Animado SokovmcDigital con Kairo y Jet -->
+  <header class="relative bg-gradient-to-r from-blue-950 via-indigo-950 to-purple-950 py-8 px-4 text-center overflow-hidden shadow-2xl border-b border-blue-500/30">
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    <div class="relative max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-left">
+        <span class="bg-blue-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow">SokovmcDigital</span>
+        <h1 class="text-3xl md:text-5xl font-black mt-2 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">TIENDA OFICIAL</h1>
+        <p class="text-slate-300 text-xs md:text-sm mt-1">Recargas oficiales y 100% seguras para tus juegos y servicios de streaming.</p>
+      </div>
+      
+      <!-- Personajes Kairo y Jet Animados -->
+      <div class="flex gap-4 animate-float">
+        <div class="bg-blue-900/40 border border-cyan-400 px-4 py-2.5 rounded-2xl text-center backdrop-blur-md shadow-lg">
+          <span class="block text-[10px] text-cyan-300 font-extrabold tracking-wider">KAIRO (FF)</span>
+          <span class="text-xl font-black">⚡</span>
+        </div>
+        <div class="bg-purple-900/40 border border-purple-400 px-4 py-2.5 rounded-2xl text-center backdrop-blur-md shadow-lg">
+          <span class="block text-[10px] text-purple-300 font-extrabold tracking-wider">JET (BS)</span>
+          <span class="text-xl font-black">🔥</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 mt-6">
+    
+    <!-- Botones de Selección de Juego -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <button onclick="seleccionarJuego('Free Fire')" id="btn-ff" class="py-4 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-blue-400 flex flex-col items-center justify-center gap-1">
+        <span class="text-lg">⚡ Free Fire (Kairo)</span>
+        <span class="text-xs font-normal text-blue-200">Diamantes, Pases y Membresías</span>
+      </button>
+      <button onclick="seleccionarJuego('Blood Strike')" id="btn-bs" class="py-4 px-4 bg-slate-900 text-slate-400 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-800 flex flex-col items-center justify-center gap-1 hover:border-purple-500/50">
+        <span class="text-lg">🔥 Blood Strike (Jet)</span>
+        <span class="text-xs font-normal text-slate-500">Oro y Pases de Juego</span>
+      </button>
+    </div>
+
+    <!-- Sección de Streaming y Contacto Rápido -->
+    <div class="bg-gradient-to-r from-purple-900/40 via-slate-900 to-blue-950/40 border border-purple-500/30 rounded-2xl p-5 mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <h3 class="text-base font-bold text-purple-300 flex items-center gap-2">📺 Cuentas de Streaming Disponibles</h3>
+        <p class="text-xs text-slate-300 mt-0.5">Netflix, Disney+, Max, Prime Video, YouTube Premium y más.</p>
+      </div>
+      <a href="https://wa.me/584128043503?text=Hola,%20vengo%20de%20SokovmcDigital%20y%20quiero%20pedir%20información%20de%20cuentas%20de%20streaming." target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-lg transition flex items-center gap-2 whitespace-nowrap active:scale-95">
+        💬 Pedir Streaming x WhatsApp
+      </a>
+    </div>
+
+    <!-- Datos de Pago con Botones Copiar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-6 shadow-xl">
+      <h3 class="text-base font-bold text-cyan-400 mb-3 flex items-center gap-2">💳 Métodos de Pago Oficiales</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+          <div class="font-bold text-blue-400 mb-1.5 flex justify-between items-center">
+            <span>🇻🇪 Pago Móvil</span>
+            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">Banco 0191</span>
+          </div>
+          <p class="text-slate-300">Cédula: <span class="font-mono text-white select-all font-bold">27796384</span></p>
+          <p class="text-slate-300 mt-1">Teléfono: <span class="font-mono text-white select-all font-bold">04128043503</span></p>
+          <button onclick="copiarPagoMovil()" class="mt-2.5 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] py-2 rounded-lg transition active:scale-95">📋 Copiar Datos Pago Móvil</button>
+        </div>
+        
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+          <div class="font-bold text-yellow-400 mb-1.5 flex justify-between items-center">
+            <span>🟡 Binance Pay</span>
+            <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">USDT</span>
+          </div>
+          <p class="text-slate-300">Binance Pay ID:</p>
+          <p class="font-mono text-white select-all font-bold text-sm mt-0.5">1103263593</p>
+          <button onclick="copiarBinance()" class="mt-2.5 w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold text-[11px] py-2 rounded-lg transition active:scale-95">📋 Copiar Binance ID</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de Pedido -->
+    <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <input type="hidden" id="selected-game" value="Free Fire">
+      
+      <div class="flex items-center justify-between bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800">
+        <span class="text-xs text-slate-400">Juego Seleccionado:</span>
+        <span id="game-badge" class="font-extrabold text-cyan-400 text-sm">Free Fire (Kairo)</span>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1 text-slate-300">🎮 ID de Jugador del Juego</label>
+        <input type="text" id="player_id" required placeholder="Ingresa tu ID de usuario aquí" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-300">📦 Paquete o Recarga a Comprar</label>
+          <select id="package_name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500">
+            <!-- Se llena dinámicamente según el juego -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-300">📱 Tu Teléfono (Ej: 04120000000)</label>
+          <input type="text" id="phone" required placeholder="04120000000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-300">💳 Método de Pago Utilizado</label>
+          <select id="payment_method" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500">
+            <option value="Pago Móvil">Pago Móvil (0191 - 04128043503)</option>
+            <option value="Binance Pay">Binance Pay (1103263593)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-300">🔢 Número de Referencia del Pago</label>
+          <input type="text" id="reference" required placeholder="Últimos 4 dígitos o referencia" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1 text-slate-300">📷 Captura o Comprobante de Pago</label>
+        <input type="file" id="receipt" accept="image/*" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
+      </div>
+
+      <button type="submit" class="w-full bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 font-black text-sm py-4 rounded-xl shadow-xl hover:opacity-95 transition active:scale-95 uppercase tracking-wider">🚀 Enviar Pedido a SokovmcDigital</button>
+    </form>
+  </main>
+
+  <!-- Botón Flotante WhatsApp -->
+  <a href="https://wa.me/584128043503?text=Hola,%20vengo%20de%20SokovmcDigital%20y%20quiero%20hacer%20un%20pedido%20o%20consultar%20soporte." target="_blank" class="fixed bottom-6 right-6 bg-emerald-500 hover:bg-emerald-400 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition transform hover:scale-110 z-50 animate-bounce">
+    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+  </a>
+
+  <script>
+    const paquetesFreeFire = [
+      "110 Diamantes -> 830 Bs / $0.83",
+      "341 Diamantes -> 2.485 Bs / $2.49",
+      "572 Diamantes -> 4.100 Bs / $4.10",
+      "1.166 Diamantes -> 7.690 Bs / $7.70",
+      "2.398 Diamantes -> 14.972 Bs / $14.97",
+      "6.160 Diamantes -> 37.935 Bs / $37.94",
+      "Membresía: Tarjeta Semanal -> 1.910 Bs / $1.91",
+      "Membresía: Tarjeta Mensual -> 8.576 Bs / $8.58",
+      "Pase de Nivel: Nivel 6 -> 300 Bs / $0.30",
+      "Pase de Nivel: Nivel 10 -> 410 Bs / $0.41",
+      "Pase de Nivel: Nivel 15 -> 410 Bs / $0.41",
+      "Pase de Nivel: Nivel 25 -> 410 Bs / $0.41",
+      "Pase de Nivel: Nivel 30 -> 630 Bs / $0.63",
+      "Pack Nivel 6 al 30 -> 2.570 Bs / $2.57",
+      "Pase Booyah -> 2.536 Bs / $2.54"
+    ];
+
+    const paquetesBloodStrike = [
+      "105 Oro -> 830,00 Bs / $0.83",
+      "320 Oro -> 2.487,00 Bs / $2.49",
+      "540 Oro -> 4.146,00 Bs / $4.15",
+      "1,100 Oro -> 8.288,00 Bs / $8.29",
+      "2,260 Oro -> 16.573,00 Bs / $16.57",
+      "5800 Oro -> 36.130,00 Bs / $36.13",
+      "Pase de nivel -> 1.770,00 Bs / $1.77",
+      "Pase élite básico -> 3.551,00 Bs / $3.55",
+      "Pase élite premium -> 8.010,00 Bs / $8.01",
+      "Cofre ultra -> 440,00 Bs / $0.44"
+    ];
+
+    function seleccionarJuego(juego) {
+      document.getElementById('selected-game').value = juego;
+      const selectPkg = document.getElementById('package_name');
+      selectPkg.innerHTML = '';
+
+      const btnFF = document.getElementById('btn-ff');
+      const btnBS = document.getElementById('btn-bs');
+      const badge = document.getElementById('game-badge');
+
+      if(juego === 'Free Fire') {
+        badge.innerText = "Free Fire (Kairo)";
+        btnFF.className = "py-4 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-blue-400 flex flex-col items-center justify-center gap-1";
+        btnBS.className = "py-4 px-4 bg-slate-900 text-slate-400 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-800 flex flex-col items-center justify-center gap-1 hover:border-purple-500/50";
+        
+        paquetesFreeFire.forEach(pkg => {
+          const opt = document.createElement('option');
+          opt.value = pkg;
+          opt.textContent = pkg;
+          selectPkg.appendChild(opt);
+        });
+      } else {
+        badge.innerText = "Blood Strike (Jet)";
+        btnBS.className = "py-4 px-4 bg-gradient-to-r from-purple-600 to-pink-600 font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-purple-400 flex flex-col items-center justify-center gap-1";
+        btnFF.className = "py-4 px-4 bg-slate-900 text-slate-400 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-800 flex flex-col items-center justify-center gap-1 hover:border-blue-500/50";
+        
+        paquetesBloodStrike.forEach(pkg => {
+          const opt = document.createElement('option');
+          opt.value = pkg;
+          opt.textContent = pkg;
+          selectPkg.appendChild(opt);
+        });
+      }
+    }
+
+    // Inicializar con Free Fire
+    seleccionarJuego('Free Fire');
+
+    function copiarPagoMovil() {
+      const texto = "Banco: 0191\nCédula: 27796384\nTeléfono: 04128043503";
+      navigator.clipboard.writeText(texto);
+      alert("¡Datos de Pago Móvil copiados al portapapeles!");
+    }
+
+    function copiarBinance() {
+      const texto = "1103263593";
+      navigator.clipboard.writeText(texto);
+      alert("¡Binance ID copiado al portapapeles!");
+    }
+
+    async function enviarPedido(e) {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('game', document.getElementById('selected-game').value);
+      formData.append('player_id', document.getElementById('player_id').value);
+      formData.append('package_name', document.getElementById('package_name').value);
+      formData.append('phone', document.getElementById('phone').value);
+      formData.append('payment_method', document.getElementById('payment_method').value);
+      formData.append('reference', document.getElementById('reference').value);
+      formData.append('receipt', document.getElementById('receipt').files[0]);
+
+      const res = await fetch('/api/orders/submit', { method: 'POST', body: formData });
+      const data = await res.json();
+      if(data.success) {
+        alert('¡Pedido enviado con éxito a SokovmcDigital! Será procesado tras verificar el comprobante.');
+        document.getElementById('order-form').reset();
+      } else {
+        alert('Error al procesar el pedido.');
+      }
+    }
+  </script>
+</body>
+</html>
