@@ -92,7 +92,7 @@ app.get('/api/admin/orders', (req, res) => {
 });
 
 // ==========================================
-// APROBAR PEDIDO Y DISPARAR API DE CENTRAL ONE
+// APROBAR PEDIDO Y DISPARAR API DE CENTRAL ONE (CORREGIDO CON "items")
 // ==========================================
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
@@ -104,13 +104,19 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   if (action === 'approve') {
     const cleanSku = order.package_name ? order.package_name.trim().split(' ')[0] : '';
 
+    // Estructura oficial requerida por Central One Global según el log de error (campo 'items')
     const coOrderPayload = {
-      product_sku: cleanSku,
+      game: order.game,
       player_id: order.player_id,
-      game: order.game
+      items: [
+        {
+          product_sku: cleanSku,
+          quantity: 1
+        }
+      ]
     };
 
-    console.log("Enviando orden a Central One:", JSON.stringify(coOrderPayload));
+    console.log("Enviando orden corregida a Central One:", JSON.stringify(coOrderPayload));
 
     const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
     const apiResponse = await callCentralOne('/orders', {
@@ -140,7 +146,7 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   }
 });
 
-// Rutas completas de la API de Central One (Documentación Oficial Integrada)
+// Rutas completas de la API de Central One
 app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
 app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
 app.post('/api/player/validate', async (req, res) => {
