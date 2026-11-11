@@ -44,6 +44,9 @@ async function callCentralOne(endpoint, options = {}) {
     ...(options.headers || {})
   };
   try {
+    console.log(`[Central One Request] ${options.method || 'GET'} ${url}`);
+    if (options.body) console.log(`[Central One Body]`, options.body);
+
     const response = await fetch(url, { ...options, headers });
     const textData = await response.text();
     let data;
@@ -63,6 +66,10 @@ async function callCentralOne(endpoint, options = {}) {
     return { success: false, error: error.message };
   }
 }
+
+// ==========================================
+// STORE & ADMIN ENDPOINTS (SokovmcDigital)
+// ==========================================
 
 // Registrar pedido desde la tienda web
 app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
@@ -91,9 +98,7 @@ app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// ==========================================
-// APROBAR PEDIDO Y DISPARAR API DE CENTRAL ONE (CON CATALOG_ITEM_ID)
-// ==========================================
+// APROBAR O RECHAZAR PEDIDO
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -102,60 +107,123 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
 
   if (action === 'approve') {
-    const cleanSku = order.package_name ? order.package_name.trim().split(' ')[0] : '';
+    try {
+      // 1. Consultar el catálogo oficial para obtener el UUID exacto (catalog_item_id)
+      const catalogRes = await callCentralOne('/catalog');
+      
+      let catalogUuid = null;
+      if (catalogRes) {
+        // Manejar posibles estructuras de respuesta del catálogo de Central One
+        const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.data || catalogRes.items || catalogRes.catalog || []);
+        if (Array.isArray(itemsList)) {
+          const searchKey = (order.package_name || '').trim().toLowerCase();
+          
+          // Buscar coincidencia exacta o por inclusión del nombre/SKU/ID
+          const matchedItem = itemsList.find(item => {
+            const itemId = (item.id || item.catalog_item_id || '').toString().toLowerCase();
+            const itemName = (item.name || item.title || item.product_name || '').toString().toLowerCase();
+            const itemSku = (item.sku || item.product_sku || '').toString().toLowerCase();
+            
+            return itemId.includes(searchKey) || searchKey.includes(itemId) || 
+                   itemName.includes(searchKey) || searchKey.includes(itemName) ||
+                   itemSku.includes(searchKey);
+          });
 
-    // Ajustado según el log exacto de Central One: exige 'catalog_item_id' dentro de cada elemento de 'items'
-    const coOrderPayload = {
-      game: order.game,
-      player_id: order.player_id,
-      items: [
-        {
-          catalog_item_id: cleanSku,
-          quantity: 1
+          if (matchedItem) {
+            catalogUuid = matchedItem.id || matchedItem.catalog_item_id;
+          } else if (itemsList.length > 0) {
+            // Fallback inteligente: si hay elementos, tomar el primero o buscar por número extraído
+            const numbersOnly = searchKey.replace(/[^0-9]/g, '');
+            const fallbackItem = itemsList.find(item => {
+              const name = (item.name || item.title || '').toString();
+              return numbersOnly && name.includes(numbersOnly);
+            });
+            if (fallbackItem) {
+              catalogUuid = fallbackItem.id || fallbackItem.catalog_item_id;
+            } else {
+              catalogUuid = itemsList[0].id || itemsList[0].catalog_item_id;
+            }
+          }
         }
-      ]
-    };
+      }
 
-    console.log("Enviando orden corregida con catalog_item_id a Central One:", JSON.stringify(coOrderPayload));
+      // Si aun así no se obtiene UUID, usar el string limpio como fallback extremo
+      const finalCatalogItemId = catalogUuid || order.package_name.trim().split(' ')[0];
 
-    const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
-    const apiResponse = await callCentralOne('/orders', {
-      method: 'POST',
-      headers: { 'Idempotency-Key': idempotencyKey },
-      body: JSON.stringify(coOrderPayload)
-    });
+      // 2. Construir la estructura exacta exigida por Central One Global API
+      const coOrderPayload = {
+        game: order.game,
+        player_id: order.player_id,
+        items: [
+          {
+            catalog_item_id: finalCatalogItemId,
+            quantity: 1
+          }
+        ]
+      };
 
-    console.log("Respuesta de Central One:", JSON.stringify(apiResponse));
+      console.log("Enviando orden a Central One con payload:", JSON.stringify(coOrderPayload));
 
-    if (apiResponse.success === false) {
-      order.status = 'error_provider';
-      order.provider_error = apiResponse.error;
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Error al procesar en Central One', 
-        details: apiResponse.error 
+      const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
+      const apiResponse = await callCentralOne('/orders', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey },
+        body: JSON.stringify(coOrderPayload)
       });
-    }
 
-    order.status = 'approved';
-    order.provider_response = apiResponse;
-    return res.json({ success: true, order, apiResponse });
+      console.log("Respuesta de Central One:", JSON.stringify(apiResponse));
+
+      if (apiResponse.success === false || (apiResponse.error && apiResponse.status >= 400)) {
+        order.status = 'error_provider';
+        order.provider_error = apiResponse.error || apiResponse;
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Error al procesar en Central One', 
+          details: apiResponse.error || apiResponse 
+        });
+      }
+
+      order.status = 'approved';
+      order.provider_response = apiResponse;
+      return res.json({ success: true, order, apiResponse });
+
+    } catch (err) {
+      console.error("Excepción crítica al aprobar orden:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
   } else {
     order.status = 'rejected';
     return res.json({ success: true, order });
   }
 });
 
-// Rutas completas de la API de Central One
-app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
-app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
+// ==========================================
+// CENTRAL ONE API PROXY ENDPOINTS (COMPLETOS)
+// ==========================================
+
+// Balance
+app.get('/api/balance', async (req, res) => {
+  res.json(await callCentralOne('/balance'));
+});
+
+// Catalog
+app.get('/api/catalog', async (req, res) => {
+  res.json(await callCentralOne('/catalog'));
+});
+
+// Player Validation
 app.post('/api/player/validate', async (req, res) => {
   res.json(await callCentralOne('/player/validate', {
     method: 'POST',
     body: JSON.stringify(req.body)
   }));
 });
-app.get('/api/player/validate/coverage', async (req, res) => res.json(await callCentralOne('/player/validate/coverage')));
+
+app.get('/api/player/validate/coverage', async (req, res) => {
+  res.json(await callCentralOne('/player/validate/coverage'));
+});
+
+// Orders Management
 app.post('/api/orders', async (req, res) => {
   const idempotencyKey = req.headers['idempotency-key'] || `order-${Date.now()}`;
   res.json(await callCentralOne('/orders', {
@@ -164,18 +232,42 @@ app.post('/api/orders', async (req, res) => {
     body: JSON.stringify(req.body)
   }));
 });
-app.get('/api/orders', async (req, res) => res.json(await callCentralOne('/orders')));
-app.get('/api/orders/:id', async (req, res) => res.json(await callCentralOne(`/orders/${req.params.id}`)));
-app.get('/api/orders/:id/codes', async (req, res) => res.json(await callCentralOne(`/orders/${req.params.id}/codes`)));
-app.get('/api/webhooks', async (req, res) => res.json(await callCentralOne('/webhooks')));
-app.get('/api/webhooks/deliveries', async (req, res) => res.json(await callCentralOne('/webhooks/deliveries')));
-app.post('/api/webhooks/test', async (req, res) => {
-  res.json(await callCentralOne('/webhooks/test', { method: 'POST', body: JSON.stringify(req.body || {}) }));
-});
-app.post('/api/webhooks/deliveries/:id/replay', async (req, res) => {
-  res.json(await callCentralOne(`/webhooks/deliveries/${req.params.id}/replay`, { method: 'POST' }));
+
+app.get('/api/orders', async (req, res) => {
+  res.json(await callCentralOne('/orders'));
 });
 
+app.get('/api/orders/:id', async (req, res) => {
+  res.json(await callCentralOne(`/orders/${req.params.id}`));
+});
+
+app.get('/api/orders/:id/codes', async (req, res) => {
+  res.json(await callCentralOne(`/orders/${req.params.id}/codes`));
+});
+
+// Webhooks Management
+app.get('/api/webhooks', async (req, res) => {
+  res.json(await callCentralOne('/webhooks'));
+});
+
+app.get('/api/webhooks/deliveries', async (req, res) => {
+  res.json(await callCentralOne('/webhooks/deliveries'));
+});
+
+app.post('/api/webhooks/test', async (req, res) => {
+  res.json(await callCentralOne('/webhooks/test', {
+    method: 'POST',
+    body: JSON.stringify(req.body || {})
+  }));
+});
+
+app.post('/api/webhooks/deliveries/:id/replay', async (req, res) => {
+  res.json(await callCentralOne(`/webhooks/deliveries/${req.params.id}/replay`, {
+    method: 'POST'
+  }));
+});
+
+// Webhook Receiver (Incoming from Central One)
 app.post('/api/webhooks/receive', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-centralone-signature'];
   const timestamp = req.headers['x-centralone-timestamp'];
@@ -187,8 +279,12 @@ app.post('/api/webhooks/receive', express.raw({ type: 'application/json' }), (re
   const payloadToSign = `${timestamp}.${rawBody.toString('utf8')}`;
   const expectedSignature = 'sha256=' + crypto.createHmac('sha256', WEBHOOK_SECRET).update(payloadToSign).digest('hex');
 
-  if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
-    return res.status(401).json({ error: 'Firma inválida' });
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
+      return res.status(401).json({ error: 'Firma inválida' });
+    }
+  } catch (e) {
+    return res.status(401).json({ error: 'Firma inválida o malformada' });
   }
 
   const eventPayload = JSON.parse(rawBody.toString('utf8'));
