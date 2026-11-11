@@ -91,6 +91,7 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
 
   if (action === 'approve') {
+    // Enviamos el nombre completo del paquete tal cual como se selecciona en la tienda
     const coOrderPayload = {
       product_sku: order.package_name,
       player_id: order.player_id,
