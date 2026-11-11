@@ -97,7 +97,7 @@ app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// APROBAR PEDIDO CON MAPEO EXACTO DE PRODUCT_ID (UUID) Y TARGET_FIELDS (PLAYER_ID / SERVER)
+// APROBAR PEDIDO CON MAPEO EXACTO DE PRODUCT_ID (UUID) Y TARGET_FIELDS
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -107,7 +107,6 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
 
   if (action === 'approve') {
     try {
-      // 1. Obtener el catálogo oficial de Central One
       const catalogRes = await callCentralOne('/catalog');
       
       let catalogUuid = null;
@@ -151,7 +150,6 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
         });
       }
 
-      // 2. Preparar objeto target dinámico según target_fields del catálogo (player_id, server, etc.)
       const targetData = {
         player_id: (order.player_id || '').toString().trim()
       };
@@ -159,7 +157,6 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
       if (order.server) {
         targetData.server = order.server.toString().trim();
       } else if (matchedProduct && Array.isArray(matchedProduct.target_fields) && matchedProduct.target_fields.includes('server')) {
-        // Si el producto exige server y no se especificó, intentar extraer de player_id si viene separado por guion/paréntesis o asignar default si existe
         if (targetData.player_id.includes('-')) {
           const parts = targetData.player_id.split('-');
           targetData.player_id = parts[0].trim();
@@ -172,7 +169,6 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
         }
       }
 
-      // 3. Construir la orden con la estructura oficial completa de Central One Global
       const coOrderPayload = {
         game: order.game,
         player_id: targetData.player_id,
