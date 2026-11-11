@@ -45,10 +45,21 @@ async function callCentralOne(endpoint, options = {}) {
   };
   try {
     const response = await fetch(url, { ...options, headers });
-    const data = await response.json();
-    if (!response.ok) return { success: false, status: response.status, error: data };
+    const textData = await response.text();
+    let data;
+    try {
+      data = JSON.parse(textData);
+    } catch (e) {
+      data = { raw: textData };
+    }
+
+    if (!response.ok) {
+      console.error(`[Central One Error] ${response.status} on ${endpoint}:`, JSON.stringify(data));
+      return { success: false, status: response.status, error: data };
+    }
     return data;
   } catch (error) {
+    console.error(`[Fetch Exception] on ${endpoint}:`, error.message);
     return { success: false, error: error.message };
   }
 }
@@ -91,12 +102,15 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
 
   if (action === 'approve') {
-    // Enviamos el nombre completo del paquete tal cual como se selecciona en la tienda
+    const cleanSku = order.package_name ? order.package_name.trim().split(' ')[0] : '';
+
     const coOrderPayload = {
-      product_sku: order.package_name,
+      product_sku: cleanSku,
       player_id: order.player_id,
       game: order.game
     };
+
+    console.log("Enviando orden a Central One:", JSON.stringify(coOrderPayload));
 
     const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
     const apiResponse = await callCentralOne('/orders', {
@@ -104,6 +118,8 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
       headers: { 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify(coOrderPayload)
     });
+
+    console.log("Respuesta de Central One:", JSON.stringify(apiResponse));
 
     if (apiResponse.success === false) {
       order.status = 'error_provider';
@@ -124,7 +140,7 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   }
 });
 
-// Rutas de la API de Central One
+// Rutas completas de la API de Central One (Documentación Oficial Integrada)
 app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
 app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
 app.post('/api/player/validate', async (req, res) => {
