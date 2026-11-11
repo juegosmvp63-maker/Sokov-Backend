@@ -7,7 +7,22 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-dotenv.config();
+dotenv.config();  if (action === 'approve') {
+    // Limpiamos el nombre del paquete para extraer solo los diamantes u oro o enviamos un SKU genérico válido
+    // Central One espera un formato limpio de producto o ID de recarga directa
+    const coOrderPayload = {
+      product_sku: order.package_name.split(' ')[0], // Toma la cantidad limpia (ej: "110")
+      player_id: order.player_id,
+      game: order.game
+    };
+
+    const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
+    const apiResponse = await callCentralOne('/orders', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify(coOrderPayload)
+    });
+  
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
