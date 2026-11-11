@@ -53,6 +53,7 @@ async function callCentralOne(endpoint, options = {}) {
   }
 }
 
+// Registrar pedido desde la tienda web
 app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
   const { game, package_name, player_id, phone, payment_method, reference } = req.body;
   const receiptUrl = req.file ? `/uploads/${req.file.filename}` : null;
@@ -74,10 +75,14 @@ app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
   res.json({ success: true, message: 'Pedido registrado con éxito en SokovmcDigital', order: newOrder });
 });
 
+// Listar pedidos para el panel admin
 app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
+// ==========================================
+// APROBAR PEDIDO Y DISPARAR API DE CENTRAL ONE
+// ==========================================
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -85,10 +90,43 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   const order = localOrders.find(o => o.id === id);
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
 
-  order.status = action === 'approve' ? 'approved' : 'rejected';
-  res.json({ success: true, order });
+  if (action === 'approve') {
+    // Mapeo inteligente o envío de orden a Central One Global
+    // Nota: Asegúrate de que el paquete tenga el product_id / sku correcto de Central One o lo mandamos genérico
+    const coOrderPayload = {
+      product_sku: order.package_name, // O el identificador que use Central One
+      player_id: order.player_id,
+      game: order.game
+    };
+
+    const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
+    const apiResponse = await callCentralOne('/orders', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify(coOrderPayload)
+    });
+
+    if (apiResponse.success === false) {
+      // Si la API del proveedor falla, guardamos el error en la orden para que lo veas
+      order.status = 'error_provider';
+      order.provider_error = apiResponse.error;
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Error al procesar en Central One', 
+        details: apiResponse.error 
+      });
+    }
+
+    order.status = 'approved';
+    order.provider_response = apiResponse;
+    return res.json({ success: true, order, apiResponse });
+  } else {
+    order.status = 'rejected';
+    return res.json({ success: true, order });
+  }
 });
 
+// Rutas de la API de Central One
 app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
 app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
 app.post('/api/player/validate', async (req, res) => {
@@ -139,5 +177,6 @@ app.post('/api/webhooks/receive', express.raw({ type: 'application/json' }), (re
 });
 
 app.listen(PORT, () => {
+  console.gt = console.log;
   console.log(`SokovmcDigital Backend corriendo en http://localhost:${PORT}`);
 });
