@@ -92,7 +92,7 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
 
   if (action === 'approve') {
     const coOrderPayload = {
-      product_sku: order.package_name.split(' ')[0],
+      product_sku: order.package_name,
       player_id: order.player_id,
       game: order.game
     };
