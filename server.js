@@ -92,7 +92,7 @@ app.get('/api/admin/orders', (req, res) => {
 });
 
 // ==========================================
-// APROBAR PEDIDO Y DISPARAR API DE CENTRAL ONE (CORREGIDO CON "items")
+// APROBAR PEDIDO Y DISPARAR API DE CENTRAL ONE (CON CATALOG_ITEM_ID)
 // ==========================================
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
@@ -104,19 +104,19 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   if (action === 'approve') {
     const cleanSku = order.package_name ? order.package_name.trim().split(' ')[0] : '';
 
-    // Estructura oficial requerida por Central One Global según el log de error (campo 'items')
+    // Ajustado según el log exacto de Central One: exige 'catalog_item_id' dentro de cada elemento de 'items'
     const coOrderPayload = {
       game: order.game,
       player_id: order.player_id,
       items: [
         {
-          product_sku: cleanSku,
+          catalog_item_id: cleanSku,
           quantity: 1
         }
       ]
     };
 
-    console.log("Enviando orden corregida a Central One:", JSON.stringify(coOrderPayload));
+    console.log("Enviando orden corregida con catalog_item_id a Central One:", JSON.stringify(coOrderPayload));
 
     const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
     const apiResponse = await callCentralOne('/orders', {
