@@ -50,6 +50,16 @@
       data.orders.forEach(o => {
         let badgeColor = o.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (o.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : (o.status === 'error_provider' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'));
         
+        let actionsHtml = '';
+        if (o.status === 'pending' || o.status === 'error_provider') {
+          actionsHtml = `
+            <button onclick="cambiarEstado('${o.id}', 'approve')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95">Aprobar</button>
+            <button onclick="cambiarEstado('${o.id}', 'reject')" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95">Rechazar</button>
+          `;
+        } else {
+          actionsHtml = `<span class="text-xs text-slate-500 italic">Procesado</span>`;
+        }
+
         tbody.innerHTML += `
           <tr class="hover:bg-slate-800/50 transition">
             <td class="p-4 font-mono text-xs text-slate-400">${o.id}</td>
@@ -73,8 +83,7 @@
               ${o.provider_error ? `<span class="block text-[10px] text-red-400 mt-1">Error API</span>` : ''}
             </td>
             <td class="p-4 space-x-2">
-              <button onclick="cambiarEstado('${o.id}', 'approve')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95">Aprobar</button>
-              <button onclick="cambiarEstado('${o.id}', 'reject')" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95">Rechazar</button>
+              ${actionsHtml}
             </td>
           </tr>
         `;
@@ -89,10 +98,10 @@
       });
       const data = await res.json();
       if(data.success) {
-        alert('¡Pedido aprobado y enviado a Central One con éxito!');
+        alert('¡Acción procesada con éxito!');
         cargarOrdenes();
       } else {
-        alert('Error al procesar en Central One: ' + JSON.stringify(data.error || data.details));
+        alert('Error: ' + JSON.stringify(data.error || data.details));
         cargarOrdenes();
       }
     }
