@@ -250,20 +250,16 @@
         });
 
         const data = await res.json();
+        console.log("Respuesta validación cliente:", data);
 
-        if (data && (data.success !== false)) {
-          const info = data.data || data;
-          const nombre = info.nickname || info.player_name || info.name || `Jugador #${playerId}`;
-          const region = info.region || info.server || 'LATAM';
+        // Búsqueda profunda en todas las posibles estructuras que devuelva la API o el servidor
+        const resObj = data.data || data;
+        const nombre = resObj.nickname || resObj.name || resObj.player_name || resObj.username || resObj.account_name || data.nickname || data.name || `Jugador #${playerId}`;
+        const region = resObj.region || resObj.server || data.region || 'LATAM';
 
-          statusDiv.className = 'font-bold text-emerald-400';
-          statusDiv.innerHTML = `✅ Nombre: <span class="text-white">${nombre}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">${region}</span>`;
-          regionInput.value = region;
-        } else {
-          statusDiv.className = 'font-bold text-emerald-400';
-          statusDiv.innerHTML = `✅ ID verificado: <span class="text-white">Jugador #${playerId}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">LATAM</span>`;
-          regionInput.value = 'LATAM';
-        }
+        statusDiv.className = 'font-bold text-emerald-400';
+        statusDiv.innerHTML = `✅ Nombre: <span class="text-white">${nombre}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">${region}</span>`;
+        regionInput.value = region;
       } catch (err) {
         statusDiv.className = 'font-bold text-emerald-400';
         statusDiv.innerHTML = `✅ ID verificado: <span class="text-white">Jugador #${playerId}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">LATAM</span>`;
