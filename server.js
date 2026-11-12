@@ -73,6 +73,38 @@ async function callCentralOne(endpoint, options = {}) {
 
 app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
   const { game, package_name, player_id, server, zone, phone, payment_method, reference } = req.body;
+  const cleanRef = (reference || '').toString().trim().toLowerCase();
+
+  if (!cleanRef || cleanRef === 'n/a') {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    return res.status(400).json({ success: false, error: 'Debes ingresar un número de referencia válido.' });
+  }
+
+  // Calcular huella digital (SHA-256) de la imagen subida para evitar que suban el mismo capture
+  let receiptHash = null;
+  if (req.file && fs.existsSync(req.file.path)) {
+    const fileBuffer = fs.readFileSync(req.file.path);
+    receiptHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+  }
+
+  // Verificar si el número de referencia o la misma imagen ya fueron registrados en pedidos activos/aprobados
+  const duplicateOrder = localOrders.find(o => {
+    const isSameRef = (o.reference || '').toString().trim().toLowerCase() === cleanRef;
+    const isSameImage = receiptHash && o.receipt_hash === receiptHash;
+    return (isSameRef || isSameImage) && (o.status === 'pending' || o.status === 'approved');
+  });
+
+  if (duplicateOrder) {
+    // Borrar la imagen duplicada del servidor para no ocupar espacio
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(400).json({
+      success: false,
+      error: '⚠️ Este comprobante o número de referencia ya fue registrado anteriormente. No se permite reutilizar el mismo comprobante.'
+    });
+  }
+
   const receiptUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   const newOrder = {
@@ -83,8 +115,9 @@ app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
     server: server || zone || 'LATAM',
     phone,
     payment_method,
-    reference: reference || 'N/A',
+    reference: reference.trim(),
     receipt: receiptUrl,
+    receipt_hash: receiptHash,
     status: 'pending',
     created_at: new Date().toISOString()
   };
@@ -105,7 +138,6 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   const order = localOrders.find(o => o.id === id);
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
 
-  // VALIDACIÓN ANTI-FRAUDE: Si ya está aprobado o rechazado, bloquear re-aprobación
   if (order.status === 'approved') {
     return res.status(400).json({ success: false, error: 'Este pedido ya fue aprobado anteriormente. No se puede volver a procesar.' });
   }
