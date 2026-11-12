@@ -261,22 +261,29 @@ app.post('/api/player/validate', async (req, res) => {
 
   console.log("Respuesta cruda de Central One /player/validate:", JSON.stringify(apiRes));
 
-  if (apiRes && apiRes.success !== false && !apiRes.error && (apiRes.nickname || apiRes.name || apiRes.player_name || apiRes.username || (apiRes.data && (apiRes.data.nickname || apiRes.data.name)))) {
-    return res.json(apiRes);
+  // Extracción profunda y robusta de cualquier campo de nombre que devuelva el proveedor
+  let foundName = null;
+  let foundRegion = 'LATAM';
+
+  if (apiRes) {
+    const obj = apiRes.data || apiRes;
+    foundName = obj.nickname || obj.name || obj.player_name || obj.username || obj.account_name || obj.customer_name;
+    foundRegion = obj.region || obj.server || obj.zone || 'LATAM';
   }
 
-  // Si Central One responde pero con otra estructura o requiere un formato específico, 
-  // devolvemos un objeto normalizado que extraiga el nickname o use el ID con éxito
-  const possibleName = (apiRes && (apiRes.nickname || apiRes.name || apiRes.player_name || apiRes.username || (apiRes.data && (apiRes.data.nickname || apiRes.data.name)))) || `Jugador #${player_id}`;
-  const possibleRegion = (apiRes && (apiRes.region || apiRes.server || (apiRes.data && apiRes.data.region))) || 'LATAM';
+  if (!foundName) {
+    foundName = `Jugador #${player_id}`;
+  }
 
   return res.json({
     success: true,
-    nickname: possibleName,
-    region: possibleRegion,
+    nickname: foundName,
+    name: foundName,
+    region: foundRegion,
     data: {
-      nickname: possibleName,
-      region: possibleRegion
+      nickname: foundName,
+      name: foundName,
+      region: foundRegion
     }
   });
 });
