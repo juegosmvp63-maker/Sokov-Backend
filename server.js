@@ -97,13 +97,21 @@ app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// APROBAR PEDIDO CON PAYLOAD ESTRICTAMENTE CORREGIDO SEGÚN CENTRAL ONE (target_payload dentro de items)
+// APROBAR PEDIDO CON VALIDACIÓN ESTRICTA ANTI-FRAUDE Y ANTI-DUPLICADOS
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
 
   const order = localOrders.find(o => o.id === id);
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado' });
+
+  // VALIDACIÓN ANTI-FRAUDE: Si ya está aprobado o rechazado, bloquear re-aprobación
+  if (order.status === 'approved') {
+    return res.status(400).json({ success: false, error: 'Este pedido ya fue aprobado anteriormente. No se puede volver a procesar.' });
+  }
+  if (order.status === 'rejected') {
+    return res.status(400).json({ success: false, error: 'Este pedido ya fue rechazado.' });
+  }
 
   if (action === 'approve') {
     try {
