@@ -247,10 +247,16 @@ app.post('/api/player/validate', async (req, res) => {
   
   if (game && game.toLowerCase().includes('free')) game = 'free-fire';
   if (game && game.toLowerCase().includes('blood')) game = 'blood-strike';
+  if (game && game.toLowerCase().includes('mobile')) game = 'mobile-legends';
 
+  const valPayload = { game, player_id };
+  if (req.body.zone || req.body.server) {
+    valPayload.server = req.body.zone || req.body.server;
+    valPayload.zone_id = req.body.zone || req.body.server;
+  }
   const apiRes = await callCentralOne('/player/validate', {
     method: 'POST',
-    body: JSON.stringify({ game, player_id })
+    body: JSON.stringify(valPayload)
   });
 
   console.log("Respuesta cruda de Central One /player/validate:", JSON.stringify(apiRes));
