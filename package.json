@@ -1,12 +1,11 @@
 {
   "name": "sokovmcdigital-backend",
   "version": "1.0.0",
-  "description": "SokovmcDigital - Backend & Web Store integration for Central One Global API",
+  "description": "SokovmcDigital - Backend & Web Store",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
