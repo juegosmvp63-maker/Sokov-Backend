@@ -55,7 +55,6 @@
           else if (o.status === 'error_provider') badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/30';
 
           let actionsHtml = '';
-          // ESTRICTO: Solo mostrar botones si está pendiente o con error de proveedor
           if (o.status === 'pending' || o.status === 'error_provider') {
             actionsHtml = `
               <div class="flex gap-2">

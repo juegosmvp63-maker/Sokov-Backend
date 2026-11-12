@@ -145,7 +145,7 @@
         <input type="file" id="receipt" accept="image/*" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
       </div>
 
-      <button type="submit" class="w-full bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 font-black text-sm py-4 rounded-xl shadow-xl hover:opacity-95 transition active:scale-95 uppercase tracking-wider">🚀 Enviar Pedido a SokovmcDigital</button>
+      <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 font-black text-sm py-4 rounded-xl shadow-xl hover:opacity-95 transition active:scale-95 uppercase tracking-wider">🚀 Enviar Pedido a SokovmcDigital</button>
     </form>
   </main>
 
@@ -285,24 +285,36 @@
 
     async function enviarPedido(e) {
       e.preventDefault();
-      const formData = new FormData();
-      formData.append('game', document.getElementById('selected-game').value);
-      formData.append('player_id', document.getElementById('player_id').value);
-      formData.append('server', document.getElementById('player_region').value);
-      formData.append('package_name', document.getElementById('package_name').value);
-      formData.append('phone', document.getElementById('phone').value);
-      formData.append('payment_method', document.getElementById('payment_method').value);
-      formData.append('reference', document.getElementById('reference').value);
-      formData.append('receipt', document.getElementById('receipt').files[0]);
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerText = '⏳ Verificando y enviando...';
 
-      const res = await fetch('/api/orders/submit', { method: 'POST', body: formData });
-      const data = await res.json();
-      if(data.success) {
-        alert('¡Pedido enviado con éxito a SokovmcDigital! Será procesado tras verificar el comprobante.');
-        document.getElementById('order-form').reset();
-        document.getElementById('player-info-box').classList.add('hidden');
-      } else {
-        alert('Error al procesar el pedido.');
+      try {
+        const formData = new FormData();
+        formData.append('game', document.getElementById('selected-game').value);
+        formData.append('player_id', document.getElementById('player_id').value);
+        formData.append('server', document.getElementById('player_region').value);
+        formData.append('package_name', document.getElementById('package_name').value);
+        formData.append('phone', document.getElementById('phone').value);
+        formData.append('payment_method', document.getElementById('payment_method').value);
+        formData.append('reference', document.getElementById('reference').value);
+        formData.append('receipt', document.getElementById('receipt').files[0]);
+
+        const res = await fetch('/api/orders/submit', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if(data.success) {
+          alert('✅ ¡Pedido enviado con éxito a SokovmcDigital! Será procesado tras verificar el comprobante.');
+          document.getElementById('order-form').reset();
+          document.getElementById('player-info-box').classList.add('hidden');
+        } else {
+          alert(data.error || '❌ Error al procesar el pedido. Verifica los datos.');
+        }
+      } catch (err) {
+        alert('❌ Error de conexión con el servidor.');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Enviar Pedido a SokovmcDigital';
       }
     }
   </script>
