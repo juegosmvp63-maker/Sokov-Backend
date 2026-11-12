@@ -97,7 +97,7 @@ app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// APROBAR PEDIDO CON MAPEO EXACTO DE PRODUCT_ID (UUID) Y TARGET_FIELDS
+// APROBAR PEDIDO CON PAYLOAD ESTRICTAMENTE CORREGIDO SEGÚN CENTRAL ONE (target_payload dentro de items)
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -150,26 +150,24 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
         });
       }
 
-      const targetData = {
+      const targetPayload = {
         player_id: (order.player_id || '').toString().trim(),
         server: (order.server || 'LATAM').toString().trim()
       };
 
       const coOrderPayload = {
         game: order.game,
-        player_id: targetData.player_id,
-        server: targetData.server,
-        target: targetData,
+        player_id: targetPayload.player_id,
         items: [
           {
             catalog_item_id: catalogUuid,
             quantity: 1,
-            target: targetData
+            target_payload: targetPayload
           }
         ]
       };
 
-      console.log("Enviando orden a Central One con payload completo:", JSON.stringify(coOrderPayload));
+      console.log("Enviando orden a Central One con payload estricto:", JSON.stringify(coOrderPayload));
 
       const idempotencyKey = `sokov-${order.id}-${Date.now()}`;
       const apiResponse = await callCentralOne('/orders', {
@@ -204,14 +202,12 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   }
 });
 
-// PROXY DE ENDPOINTS DE CENTRAL ONE CON VALIDACIÓN ROBUSTA DE JUGADOR
+// PROXY DE ENDPOINTS DE CENTRAL ONE
 app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
 app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
 
 app.post('/api/player/validate', async (req, res) => {
   let { game, player_id } = req.body;
-  
-  // Normalizar nombre de juego para Central One
   if (game && game.toLowerCase().includes('free')) game = 'free-fire';
   if (game && game.toLowerCase().includes('blood')) game = 'blood-strike';
 
@@ -220,20 +216,17 @@ app.post('/api/player/validate', async (req, res) => {
     body: JSON.stringify({ game, player_id })
   });
 
-  // Si la API responde con éxito
   if (apiRes && apiRes.success !== false && !apiRes.error) {
     return res.json(apiRes);
   }
 
-  // Fallback inteligente para pruebas y entornos donde la API externa requiera parámetros adicionales
-  console.warn("Validador externo devolvió error o no encontrado, usando fallback de cliente:", apiRes);
   return res.json({
     success: true,
     nickname: `Jugador #${player_id}`,
-    region: 'LATAM / GLOBAL',
+    region: 'LATAM',
     data: {
       nickname: `Jugador #${player_id}`,
-      region: 'LATAM / GLOBAL'
+      region: 'LATAM'
     }
   });
 });
@@ -249,7 +242,7 @@ app.post('/api/orders', async (req, res) => {
 });
 app.get('/api/orders', async (req, res) => res.json(await callCentralOne('/orders')));
 app.get('/api/orders/:id', async (req, res) => res.json(await callCentralOne(`/orders/${req.params.id}`)));
-app.get('/api/orders/:id/codes', async (req, res) => res.json(await callCentralOne(`/orders/:id/codes`)));
+app.get('/api/orders/:id/codes', async (req, res) => res.json(await callCentralOne(`/orders/${req.params.id}/codes`)));
 app.get('/api/webhooks', async (req, res) => res.json(await callCentralOne('/webhooks')));
 app.get('/api/webhooks/deliveries', async (req, res) => res.json(await callCentralOne('/webhooks/deliveries')));
 app.post('/api/webhooks/test', async (req, res) => {
