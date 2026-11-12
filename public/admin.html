@@ -28,7 +28,7 @@
             </tr>
           </thead>
           <tbody id="orders-table" class="divide-y divide-slate-800 text-sm">
-            <!-- Se carga vía JavaScript -->
+            <tr><td colspan="7" class="p-6 text-center text-slate-500">Cargando pedidos...</td></tr>
           </tbody>
         </table>
       </div>
@@ -37,76 +37,96 @@
 
   <script>
     async function cargarOrdenes() {
-      const res = await fetch('/api/admin/orders');
-      const data = await res.json();
-      const tbody = document.getElementById('orders-table');
-      tbody.innerHTML = '';
+      try {
+        const res = await fetch('/api/admin/orders?t=' + Date.now());
+        const data = await res.json();
+        const tbody = document.getElementById('orders-table');
+        tbody.innerHTML = '';
 
-      if(!data.orders || data.orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">No hay pedidos registrados por el momento.</td></tr>`;
-        return;
-      }
-
-      data.orders.forEach(o => {
-        let badgeColor = o.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (o.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : (o.status === 'error_provider' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'));
-        
-        let actionsHtml = '';
-        if (o.status === 'pending' || o.status === 'error_provider') {
-          actionsHtml = `
-            <button onclick="cambiarEstado('${o.id}', 'approve')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95">Aprobar</button>
-            <button onclick="cambiarEstado('${o.id}', 'reject')" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95">Rechazar</button>
-          `;
-        } else {
-          actionsHtml = `<span class="text-xs text-slate-500 italic">Procesado</span>`;
+        if(!data.orders || data.orders.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">No hay pedidos registrados por el momento.</td></tr>`;
+          return;
         }
 
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-800/50 transition">
-            <td class="p-4 font-mono text-xs text-slate-400">${o.id}</td>
-            <td class="p-4">
-              <span class="font-bold block text-white">${o.game}</span>
-              <span class="text-xs text-slate-400">${o.package_name}</span>
-            </td>
-            <td class="p-4">
-              <span class="font-mono text-cyan-300 block font-bold">ID: ${o.player_id}</span>
-              <span class="text-xs text-slate-400">📞 ${o.phone}</span>
-            </td>
-            <td class="p-4">
-              <span class="font-semibold block text-white">${o.payment_method}</span>
-              <span class="font-mono text-xs text-slate-400">Ref: ${o.reference}</span>
-            </td>
-            <td class="p-4">
-              ${o.receipt ? `<a href="${o.receipt}" target="_blank" class="text-blue-400 underline font-semibold text-xs hover:text-blue-300">🖼️ Ver Comprobante</a>` : 'Sin captura'}
-            </td>
-            <td class="p-4">
-              <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeColor}">${o.status.toUpperCase()}</span>
-              ${o.provider_error ? `<span class="block text-[10px] text-red-400 mt-1">Error API</span>` : ''}
-            </td>
-            <td class="p-4 space-x-2">
-              ${actionsHtml}
-            </td>
-          </tr>
-        `;
-      });
+        data.orders.forEach(o => {
+          let badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+          if (o.status === 'approved') badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+          else if (o.status === 'rejected') badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+          else if (o.status === 'error_provider') badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+
+          let actionsHtml = '';
+          // ESTRICTO: Solo mostrar botones si está pendiente o con error de proveedor
+          if (o.status === 'pending' || o.status === 'error_provider') {
+            actionsHtml = `
+              <div class="flex gap-2">
+                <button onclick="cambiarEstado('${o.id}', 'approve')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95 shadow">Aprobar</button>
+                <button onclick="cambiarEstado('${o.id}', 'reject')" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-1.5 rounded-lg font-bold transition active:scale-95 shadow">Rechazar</button>
+              </div>
+            `;
+          } else if (o.status === 'approved') {
+            actionsHtml = `<span class="inline-block px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg text-xs font-bold">✨ Completado y Entregado</span>`;
+          } else {
+            actionsHtml = `<span class="inline-block px-3 py-1 bg-rose-950 text-rose-400 border border-rose-800 rounded-lg text-xs font-bold">⛔ Rechazado</span>`;
+          }
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-800/50 transition">
+              <td class="p-4 font-mono text-xs text-slate-400">${o.id}</td>
+              <td class="p-4">
+                <span class="font-bold block text-white">${o.game}</span>
+                <span class="text-xs text-slate-400">${o.package_name}</span>
+              </td>
+              <td class="p-4">
+                <span class="font-mono text-cyan-300 block font-bold">ID: ${o.player_id}</span>
+                <span class="text-xs text-slate-400">📞 ${o.phone}</span>
+              </td>
+              <td class="p-4">
+                <span class="font-semibold block text-white">${o.payment_method}</span>
+                <span class="font-mono text-xs text-slate-400">Ref: ${o.reference}</span>
+              </td>
+              <td class="p-4">
+                ${o.receipt ? `<a href="${o.receipt}" target="_blank" class="text-blue-400 underline font-semibold text-xs hover:text-blue-300">🖼️ Ver Comprobante</a>` : 'Sin captura'}
+              </td>
+              <td class="p-4">
+                <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeColor}">${o.status.toUpperCase()}</span>
+                ${o.provider_error ? `<span class="block text-[10px] text-red-400 mt-1">Error API</span>` : ''}
+              </td>
+              <td class="p-4">
+                ${actionsHtml}
+              </td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        console.error("Error cargando órdenes:", err);
+      }
     }
 
     async function cambiarEstado(id, action) {
-      const res = await fetch(`/api/admin/orders/${id}/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
-      });
-      const data = await res.json();
-      if(data.success) {
-        alert('¡Acción procesada con éxito!');
-        cargarOrdenes();
-      } else {
-        alert('Error: ' + JSON.stringify(data.error || data.details));
+      if(!confirm(`¿Estás seguro de ${action === 'approve' ? 'aprobar' : 'rechazar'} este pedido?`)) return;
+
+      try {
+        const res = await fetch(`/api/admin/orders/${id}/action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        if(data.success) {
+          alert('¡Acción procesada con éxito!');
+          cargarOrdenes();
+        } else {
+          alert('Error: ' + (data.error || JSON.stringify(data.details)));
+          cargarOrdenes();
+        }
+      } catch (e) {
+        alert('Error de conexión al procesar la acción.');
         cargarOrdenes();
       }
     }
 
     cargarOrdenes();
+    setInterval(cargarOrdenes, 8000);
   </script>
 </body>
 </html>
