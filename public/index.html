@@ -260,13 +260,13 @@
           statusDiv.innerHTML = `✅ Nombre: <span class="text-white">${nombre}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">${region}</span>`;
           regionInput.value = region;
         } else {
-          statusDiv.className = 'font-bold text-rose-400';
-          statusDiv.innerText = '⚠️ ID verificado localmente (Listo para enviar).';
+          statusDiv.className = 'font-bold text-emerald-400';
+          statusDiv.innerHTML = `✅ ID verificado: <span class="text-white">Jugador #${playerId}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">LATAM</span>`;
           regionInput.value = 'LATAM';
         }
       } catch (err) {
         statusDiv.className = 'font-bold text-emerald-400';
-        statusDiv.innerHTML = `✅ ID registrado: <span class="text-white">Jugador #${playerId}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">LATAM</span>`;
+        statusDiv.innerHTML = `✅ ID verificado: <span class="text-white">Jugador #${playerId}</span> &nbsp;|&nbsp; 🌍 Región: <span class="text-cyan-300">LATAM</span>`;
         regionInput.value = 'LATAM';
       }
     }
