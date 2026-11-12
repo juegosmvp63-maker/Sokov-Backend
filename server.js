@@ -80,14 +80,12 @@ app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
     return res.status(400).json({ success: false, error: 'Debes ingresar un número de referencia válido.' });
   }
 
-  // Calcular huella digital (SHA-256) de la imagen subida para evitar que suban el mismo capture
   let receiptHash = null;
   if (req.file && fs.existsSync(req.file.path)) {
     const fileBuffer = fs.readFileSync(req.file.path);
     receiptHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
   }
 
-  // Verificar si el número de referencia o la misma imagen ya fueron registrados en pedidos activos/aprobados
   const duplicateOrder = localOrders.find(o => {
     const isSameRef = (o.reference || '').toString().trim().toLowerCase() === cleanRef;
     const isSameImage = receiptHash && o.receipt_hash === receiptHash;
@@ -95,7 +93,6 @@ app.post('/api/orders/submit', upload.single('receipt'), (req, res) => {
   });
 
   if (duplicateOrder) {
-    // Borrar la imagen duplicada del servidor para no ocupar espacio
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
@@ -130,7 +127,6 @@ app.get('/api/admin/orders', (req, res) => {
   res.json({ success: true, orders: localOrders });
 });
 
-// APROBAR PEDIDO CON VALIDACIÓN ESTRICTA ANTI-FRAUDE Y ANTI-DUPLICADOS
 app.post('/api/admin/orders/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
@@ -242,12 +238,13 @@ app.post('/api/admin/orders/:id/action', async (req, res) => {
   }
 });
 
-// PROXY DE ENDPOINTS DE CENTRAL ONE
+// PROXY DE ENDPOINTS DE CENTRAL ONE CON EXTRACCIÓN ROBUSTA DE NICKNAME
 app.get('/api/balance', async (req, res) => res.json(await callCentralOne('/balance')));
 app.get('/api/catalog', async (req, res) => res.json(await callCentralOne('/catalog')));
 
 app.post('/api/player/validate', async (req, res) => {
   let { game, player_id } = req.body;
+  
   if (game && game.toLowerCase().includes('free')) game = 'free-fire';
   if (game && game.toLowerCase().includes('blood')) game = 'blood-strike';
 
@@ -256,17 +253,24 @@ app.post('/api/player/validate', async (req, res) => {
     body: JSON.stringify({ game, player_id })
   });
 
-  if (apiRes && apiRes.success !== false && !apiRes.error) {
+  console.log("Respuesta cruda de Central One /player/validate:", JSON.stringify(apiRes));
+
+  if (apiRes && apiRes.success !== false && !apiRes.error && (apiRes.nickname || apiRes.name || apiRes.player_name || apiRes.username || (apiRes.data && (apiRes.data.nickname || apiRes.data.name)))) {
     return res.json(apiRes);
   }
 
+  // Si Central One responde pero con otra estructura o requiere un formato específico, 
+  // devolvemos un objeto normalizado que extraiga el nickname o use el ID con éxito
+  const possibleName = (apiRes && (apiRes.nickname || apiRes.name || apiRes.player_name || apiRes.username || (apiRes.data && (apiRes.data.nickname || apiRes.data.name)))) || `Jugador #${player_id}`;
+  const possibleRegion = (apiRes && (apiRes.region || apiRes.server || (apiRes.data && apiRes.data.region))) || 'LATAM';
+
   return res.json({
     success: true,
-    nickname: `Jugador #${player_id}`,
-    region: 'LATAM',
+    nickname: possibleName,
+    region: possibleRegion,
     data: {
-      nickname: `Jugador #${player_id}`,
-      region: 'LATAM'
+      nickname: possibleName,
+      region: possibleRegion
     }
   });
 });
