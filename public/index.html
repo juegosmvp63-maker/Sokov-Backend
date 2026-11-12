@@ -14,7 +14,10 @@
     .animate-float { animation: float 3s ease-in-out infinite; }
   </style>
 </head>
-<body class="bg-slate-950 text-white font-sans min-h-screen pb-24">
+<body class="bg-slate-950 text-white font-sans min-h-screen pb-24 relative">
+  <!-- Imagen de Fondo Oficial SokovmcDigital -->
+  <div class="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat" style="background-image: url('/images/bg-store.jpg');"></div>
+  <div class="fixed inset-0 z-[-1] bg-slate-950/75 backdrop-blur-[2px]"></div>
 
   <!-- Banner Animado SokovmcDigital con Kairo y Jet -->
   <header class="relative bg-gradient-to-r from-blue-950 via-indigo-950 to-purple-950 py-8 px-4 text-center overflow-hidden shadow-2xl border-b border-blue-500/30">
@@ -66,7 +69,7 @@
     </div>
 
     <!-- Datos de Pago con Botones Copiar -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-6 shadow-xl">
+    <div class="bg-slate-900/85 backdrop-blur-md border border-slate-800 rounded-2xl p-5 mb-6 shadow-xl">
       <h3 class="text-base font-bold text-cyan-400 mb-3 flex items-center gap-2">💳 Métodos de Pago Oficiales</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
         <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
@@ -92,7 +95,7 @@
     </div>
 
     <!-- Formulario de Pedido -->
-    <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+    <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-900/85 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <input type="hidden" id="selected-game" value="Free Fire">
       <input type="hidden" id="player_region" value="LATAM">
       
