@@ -63,7 +63,6 @@ async function fulfillOrderWithCentralOne(order) {
     if (catalogRes) {
       const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.items || catalogRes.data || []);
       if (Array.isArray(itemsList) && itemsList.length > 0) {
-        // Extraemos el nombre limpio antes de "->"
         const rawPackageName = (order.package_name || '').split('->')[0].trim().toLowerCase();
         
         let matched = itemsList.find(item => {
@@ -76,7 +75,6 @@ async function fulfillOrderWithCentralOne(order) {
           );
         });
 
-        // Búsqueda secundaria por palabras clave exactas para Cajas/Fragmentos Evo
         if (!matched && rawPackageName.includes('evo')) {
           matched = itemsList.find(item => {
             const name = (item.name || '').toString().toLowerCase();
