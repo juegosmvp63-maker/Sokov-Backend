@@ -63,12 +63,31 @@ async function fulfillOrderWithCentralOne(order) {
     if (catalogRes) {
       const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.items || catalogRes.data || []);
       if (Array.isArray(itemsList) && itemsList.length > 0) {
-        const searchKey = (order.package_name || '').trim().toLowerCase();
+        // Extraemos el nombre limpio antes de "->"
+        const rawPackageName = (order.package_name || '').split('->')[0].trim().toLowerCase();
+        
         let matched = itemsList.find(item => {
           const sku = (item.sku || '').toString().toLowerCase();
           const name = (item.name || '').toString().toLowerCase();
-          return searchKey.includes(sku) || searchKey.includes(name);
-        }) || itemsList[0];
+          return (
+            name.includes(rawPackageName) ||
+            rawPackageName.includes(name) ||
+            (sku && rawPackageName.includes(sku))
+          );
+        });
+
+        // Búsqueda secundaria por palabras clave exactas para Cajas/Fragmentos Evo
+        if (!matched && rawPackageName.includes('evo')) {
+          matched = itemsList.find(item => {
+            const name = (item.name || '').toString().toLowerCase();
+            return name.includes(rawPackageName);
+          });
+        }
+
+        if (!matched) {
+          matched = itemsList[0];
+        }
+
         catalogUuid = matched.product_id || matched.id;
       }
     }
