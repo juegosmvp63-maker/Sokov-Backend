@@ -1,225 +1,388 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokovm - Tienda de Recargas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokovmcDigital - Tienda Oficial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+  </style>
 </head>
-<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col">
+<body class="bg-slate-950 text-white font-sans min-h-screen pb-24 relative">
+  <!-- Fondo Animado en Video RGB -->
+  <video autoplay loop muted playsinline class="fixed inset-0 w-full h-full object-cover z-[-2]">
+    <source src="bg-video.mp4" type="video/mp4">
+  </video>
+  <div class="fixed inset-0 z-[-1] bg-slate-950/70 backdrop-blur-[2px]"></div>
 
-    <!-- Navbar -->
-    <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10">
-        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h1 class="text-2xl font-extrabold text-yellow-400 tracking-wide">⚡ SOKOVM</h1>
-            <nav class="flex flex-wrap gap-2">
-                <button onclick="mostrarSeccion('free-fire')" class="tab-btn bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold transition">Free Fire</button>
-                <button onclick="mostrarSeccion('cajas-evo')" class="tab-btn bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition">Cajas y Fragmentos Evo</button>
-                <button onclick="mostrarSeccion('blood-strike')" class="tab-btn bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition">Blood Strike</button>
-            </nav>
+  <!-- Banner SokovmcDigital -->
+  <header class="relative bg-slate-950/50 backdrop-blur-md py-8 px-4 text-center overflow-hidden shadow-2xl border-b border-rose-500/30">
+    <div class="relative max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-left">
+        <span class="bg-rose-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow">SokovmcDigital</span>
+        <h1 class="text-3xl md:text-5xl font-black mt-2 bg-gradient-to-r from-cyan-400 via-purple-400 to-rose-400 bg-clip-text text-transparent">TIENDA OFICIAL</h1>
+        <p class="text-slate-200 text-xs md:text-sm mt-1">Recargas oficiales y 100% seguras para tus juegos favoritos.</p>
+      </div>
+      
+      <div class="flex flex-wrap justify-center gap-3 animate-float">
+        <div class="bg-blue-900/50 border border-cyan-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+          <span class="block text-[10px] text-cyan-300 font-extrabold">FREE FIRE</span>
+          <span class="text-lg font-black">⚡</span>
         </div>
-    </header>
+        <div class="bg-amber-900/50 border border-amber-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+          <span class="block text-[10px] text-amber-300 font-extrabold">CAJAS EVO</span>
+          <span class="text-lg font-black">📦</span>
+        </div>
+        <div class="bg-purple-900/50 border border-purple-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+          <span class="block text-[10px] text-purple-300 font-extrabold">BLOOD STRIKE</span>
+          <span class="text-lg font-black">🔥</span>
+        </div>
+        <div class="bg-sky-900/50 border border-sky-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+          <span class="block text-[10px] text-sky-300 font-extrabold">MLBB</span>
+          <span class="text-lg font-black">💎</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-    <!-- Main Content -->
-    <main class="max-w-5xl mx-auto p-4 flex-1 w-full">
+  <main class="max-w-3xl mx-auto px-4 mt-6">
+    
+    <!-- Botones de Selección de Juego (Opción 2: Pestaña separada para Cajas/Fragmentos Evo) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <button type="button" onclick="seleccionarJuego('Free Fire')" id="btn-ff" class="py-3.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-blue-400 flex flex-col items-center justify-center gap-1">
+        <span class="text-base">⚡ Free Fire</span>
+        <span class="text-[11px] font-normal text-blue-100">Diamantes y Pases</span>
+      </button>
+      <button type="button" onclick="seleccionarJuego('Cajas y Fragmentos Evo')" id="btn-evo" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-amber-500/60">
+        <span class="text-base">📦 Cajas Evo</span>
+        <span class="text-[11px] font-normal text-slate-400">Fragmentos Arma Evo</span>
+      </button>
+      <button type="button" onclick="seleccionarJuego('Blood Strike')" id="btn-bs" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-purple-500/60">
+        <span class="text-base">🔥 Blood Strike</span>
+        <span class="text-[11px] font-normal text-slate-400">Oro y Pases Élite</span>
+      </button>
+      <button type="button" onclick="seleccionarJuego('Mobile Legends Bang Bang')" id="btn-ml" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-cyan-500/60">
+        <span class="text-base">💎 Mobile Legends</span>
+        <span class="text-[11px] font-normal text-slate-400">Diamantes y Pases</span>
+      </button>
+    </div>
+
+    <!-- Streaming y Contacto -->
+    <div class="bg-slate-950/60 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <h3 class="text-base font-bold text-purple-300 flex items-center gap-2">📺 Cuentas de Streaming Disponibles</h3>
+        <p class="text-xs text-slate-300 mt-0.5">Netflix, Disney+, Max, Prime Video, YouTube Premium y más.</p>
+      </div>
+      <a href="https://wa.me/584128043503?text=Hola,%20vengo%20de%20SokovmcDigital%20y%20quiero%20pedir%20información%20de%20cuentas%20de%20streaming." target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-lg transition flex items-center gap-2 whitespace-nowrap active:scale-95">
+        💬 Pedir Streaming x WhatsApp
+      </a>
+    </div>
+
+    <!-- Datos de Pago -->
+    <div class="bg-slate-950/60 backdrop-blur-md border border-rose-500/30 rounded-2xl p-5 mb-6 shadow-2xl">
+      <h3 class="text-base font-bold text-cyan-400 mb-3 flex items-center gap-2">💳 Métodos de Pago Oficiales</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+          <div class="font-bold text-blue-400 mb-1.5 flex justify-between items-center">
+            <span>🇻🇪 Pago Móvil</span>
+            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">Banco 0191</span>
+          </div>
+          <p class="text-slate-300">Cédula: <span class="font-mono text-white select-all font-bold">27796384</span></p>
+          <p class="text-slate-300 mt-1">Teléfono: <span class="font-mono text-white select-all font-bold">04128043503</span></p>
+          <button type="button" onclick="copiarPagoMovil()" class="mt-2.5 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] py-2 rounded-lg transition active:scale-95">📋 Copiar Datos Pago Móvil</button>
+        </div>
         
-        <!-- Datos del Jugador -->
-        <section class="bg-gray-800 p-5 rounded-xl mb-6 border border-gray-700 shadow-lg">
-            <h2 class="text-lg font-bold mb-3 text-yellow-400">1. Ingresa tu ID de Jugador</h2>
-            <div class="flex flex-col sm:flex-row gap-3">
-                <input type="text" id="player-id" placeholder="Ej: 123456789" class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400">
-            </div>
-        </section>
+        <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+          <div class="font-bold text-yellow-400 mb-1.5 flex justify-between items-center">
+            <span>🟡 Binance Pay</span>
+            <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">USDT</span>
+          </div>
+          <p class="text-slate-300">Binance Pay ID:</p>
+          <p class="font-mono text-white select-all font-bold text-sm mt-0.5">1103263593</p>
+          <button type="button" onclick="copiarBinance()" class="mt-2.5 w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold text-[11px] py-2 rounded-lg transition active:scale-95">📋 Copiar Binance ID</button>
+        </div>
+      </div>
+    </div>
 
-        <!-- Sección Free Fire Diamantes -->
-        <section id="free-fire" class="category-section">
-            <h2 class="text-xl font-bold mb-4 text-yellow-400">💎 Diamantes Free Fire</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">100 + 10 Diamantes</h3>
-                        <p class="text-green-400 font-bold">$1.10</p>
-                    </div>
-                    <button onclick="seleccionarPaquete('100 + 10 Diamantes FF', 1.10)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">310 + 31 Diamantes</h3>
-                        <p class="text-green-400 font-bold">$3.20</p>
-                    </div>
-                    <button onclick="seleccionarPaquete('310 + 31 Diamantes FF', 3.20)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">520 + 52 Diamantes</h3>
-                        <p class="text-green-400 font-bold">$5.20</p>
-                    </div>
-                    <button onclick="seleccionarPaquete('520 + 52 Diamantes FF', 5.20)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">Tarjeta Semanal</h3>
-                        <p class="text-green-400 font-bold">$2.10</p>
-                    </div>
-                    <button onclick="seleccionarPaquete('Tarjeta Semanal FF', 2.10)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
-            </div>
-        </section>
+    <!-- Formulario -->
+    <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-950/60 backdrop-blur-md border border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+      <input type="hidden" id="selected-game" value="Free Fire">
+      <input type="hidden" id="player_region" value="LATAM">
+      
+      <div class="flex items-center justify-between bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800">
+        <span class="text-xs text-slate-400">Categoría Seleccionada:</span>
+        <span id="game-badge" class="font-extrabold text-cyan-400 text-sm">Free Fire</span>
+      </div>
 
-        <!-- Sección Cajas y Fragmentos Evo -->
-        <section id="cajas-evo" class="category-section hidden">
-            <h2 class="text-xl font-bold mb-4 text-yellow-400">🔥 Cajas y Fragmentos de Arma Evo (Free Fire)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">1 Caja de fragmentos Evo</h3>
-                        <p class="text-green-400 font-bold">$0.03 <span class="text-xs text-gray-400">(35,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('1 Caja de fragmentos Evo', 0.03)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+      <div>
+        <label class="block text-xs font-semibold mb-1 text-slate-200">🎮 ID de Jugador</label>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="player_id" required placeholder="Ingresa tu ID de usuario" class="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+          
+          <input type="text" id="zone_id" placeholder="Zone ID (Ej: 1234)" class="hidden sm:w-44 bg-slate-950/90 border border-cyan-500/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400 font-mono">
+          
+          <button type="button" onclick="validarJugador()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-3 sm:py-0 rounded-xl shadow transition whitespace-nowrap active:scale-95">
+            🔍 Verificar
+          </button>
+        </div>
+        <div id="player-info-box" class="hidden mt-2 p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs">
+          <div id="player-status" class="font-bold"></div>
+        </div>
+      </div>
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">5 Cajas de fragmentos Evo</h3>
-                        <p class="text-green-400 font-bold">$0.15 <span class="text-xs text-gray-400">(160,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('5 Cajas de fragmentos Evo', 0.15)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-200">📦 Paquete o Recarga</label>
+          <select id="package_name" class="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500">
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-200">📱 Tu Teléfono (Pago Móvil)</label>
+          <input type="text" id="phone" required placeholder="04120000000" class="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+      </div>
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">10 Cajas de fragmentos Evo</h3>
-                        <p class="text-green-400 font-bold">$0.30 <span class="text-xs text-gray-400">(320,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('10 Cajas de fragmentos Evo', 0.30)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-200">💳 Método de Pago</label>
+          <select id="payment_method" class="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500">
+            <option value="Pago Móvil">Pago Móvil (0191 - 04128043503)</option>
+            <option value="Binance Pay">Binance Pay (1103263593)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-slate-200">🔢 Número de Referencia</label>
+          <input type="text" id="reference" required placeholder="Últimos dígitos o referencia" class="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+      </div>
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">10 Fragmentos de arma Evo</h3>
-                        <p class="text-green-400 font-bold">$1.49 <span class="text-xs text-gray-400">(1.600,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('10 Fragmentos de arma Evo', 1.49)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+      <div>
+        <label class="block text-xs font-semibold mb-1 text-slate-200">📷 Comprobante de Pago</label>
+        <input type="file" id="receipt" accept="image/*" required class="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-3 py-2 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
+      </div>
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">50 Cajas de fragmentos Evo</h3>
-                        <p class="text-green-400 font-bold">$1.49 <span class="text-xs text-gray-400">(1.600,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('50 Cajas de fragmentos Evo', 1.49)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+      <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-rose-600 via-purple-600 to-blue-600 font-black text-sm py-4 rounded-xl shadow-xl hover:opacity-95 transition active:scale-95 uppercase tracking-wider">🚀 Enviar Pedido a SokovmcDigital</button>
+    </form>
+  </main>
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">50 Fragmentos de arma Evo</h3>
-                        <p class="text-green-400 font-bold">$7.45 <span class="text-xs text-gray-400">(8.000,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('50 Fragmentos de arma Evo', 7.45)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+  <script>
+    const paquetesFreeFire = [
+      "110 Diamantes -> 830 Bs / $0.83",
+      "341 Diamantes -> 2.485 Bs / $2.49",
+      "572 Diamantes -> 4.100 Bs / $4.10",
+      "1.166 Diamantes -> 7.690 Bs / $7.70",
+      "2.398 Diamantes -> 14.972 Bs / $14.97",
+      "6.160 Diamantes -> 37.935 Bs / $37.94",
+      "Membresía: Tarjeta Semanal -> 1.910 Bs / $1.91",
+      "Membresía: Tarjeta Mensual -> 8.576 Bs / $8.58"
+    ];
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">100 Fragmentos de arma Evo</h3>
-                        <p class="text-green-400 font-bold">$14.90 <span class="text-xs text-gray-400">(16.000,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('100 Fragmentos de arma Evo', 14.90)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+    const paquetesCajasEvo = [
+      "1 Caja de fragmentos Evo -> 35,00 Bs / $0.03",
+      "5 Cajas de fragmentos Evo -> 160,00 Bs / $0.15",
+      "10 Cajas de fragmentos Evo -> 320,00 Bs / $0.30",
+      "10 Fragmentos de arma Evo -> 1.600,00 Bs / $1.49",
+      "50 Cajas de fragmentos Evo -> 1.600,00 Bs / $1.49",
+      "50 Fragmentos de arma Evo -> 8.000,00 Bs / $7.45",
+      "100 Fragmentos de arma Evo -> 16.000,00 Bs / $14.90",
+      "500 Fragmentos de arma Evo -> 80.000,00 Bs / $74.50"
+    ];
 
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">500 Fragmentos de arma Evo</h3>
-                        <p class="text-green-400 font-bold">$74.50 <span class="text-xs text-gray-400">(80.000,00 Bs.)</span></p>
-                    </div>
-                    <button onclick="seleccionarPaquete('500 Fragmentos de arma Evo', 74.50)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
+    const paquetesBloodStrike = [
+      "105 Oro -> 830,00 Bs / $0.83",
+      "320 Oro -> 2.487,00 Bs / $2.49",
+      "540 Oro -> 4.146,00 Bs / $4.15",
+      "1,100 Oro -> 8.288,00 Bs / $8.29",
+      "2,260 Oro -> 16.573,00 Bs / $16.57",
+      "Pase élite básico -> 3.551,00 Bs / $3.55"
+    ];
 
-            </div>
-        </section>
+    const paquetesMobileLegends = [
+      "50+5 Diamantes -> 831 Bs / $0.83",
+      "150+15 Diamantes -> 2.490 Bs / $2.49",
+      "250+25 Diamantes -> 3.994 Bs / $3.99",
+      "500+65 Diamantes -> 8.202 Bs / $8.20",
+      "Pase Semanal -> 1.599 Bs / $1.60"
+    ];
 
-        <!-- Sección Blood Strike -->
-        <section id="blood-strike" class="category-section hidden">
-            <h2 class="text-xl font-bold mb-4 text-yellow-400">🔫 Oro Blood Strike</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">100 + 5 Oro</h3>
-                        <p class="text-green-400 font-bold">$1.05</p>
-                    </div>
-                    <button onclick="seleccionarPaquete('100 + 5 Oro Blood Strike', 1.05)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold text-white">300 + 20 Oro</h3>
-                        <p class="text-green-400 font-bold">$3.10</p>
-                    </div>
-                    <button onclick="seleccionarPaquete('300 + 20 Oro Blood Strike', 3.10)" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold transition">Elegir</button>
-                </div>
-            </div>
-        </section>
+    function seleccionarJuego(juego) {
+      document.getElementById('selected-game').value = juego;
+      document.getElementById('player-info-box').classList.add('hidden');
+      document.getElementById('player_region').value = 'LATAM';
+      const selectPkg = document.getElementById('package_name');
+      selectPkg.innerHTML = '';
 
-        <!-- Resumen de Compra -->
-        <section id="resumen-compra" class="hidden mt-8 bg-gray-800 p-6 rounded-xl border border-yellow-500/50 shadow-xl">
-            <h2 class="text-lg font-bold text-yellow-400 mb-2">2. Confirmar Pedido</h2>
-            <p class="text-gray-300 mb-1">Paquete seleccionado: <span id="paquete-nombre" class="font-bold text-white"></span></p>
-            <p class="text-gray-300 mb-4">Total a pagar: <span id="paquete-precio" class="font-bold text-green-400"></span></p>
-            <button onclick="enviarPedido()" class="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-lg transition">Procesar Recarga</button>
-        </section>
+      const btnFF = document.getElementById('btn-ff');
+      const btnEvo = document.getElementById('btn-evo');
+      const btnBS = document.getElementById('btn-bs');
+      const btnML = document.getElementById('btn-ml');
+      const badge = document.getElementById('game-badge');
+      const zoneInput = document.getElementById('zone_id');
 
-    </main>
+      const inactiveClass = "py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1";
 
-    <footer class="bg-gray-800 border-t border-gray-700 text-center p-4 text-sm text-gray-400 mt-10">
-        Sokovm &copy; 2026 - Recargas Rápidas y Seguras
-    </footer>
+      btnFF.className = inactiveClass + " hover:border-blue-500/60";
+      btnEvo.className = inactiveClass + " hover:border-amber-500/60";
+      btnBS.className = inactiveClass + " hover:border-purple-500/60";
+      btnML.className = inactiveClass + " hover:border-cyan-500/60";
 
-    <script>
-        let paqueteActual = null;
+      if (juego === 'Free Fire') {
+        badge.innerText = "Free Fire";
+        btnFF.className = "py-3.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-blue-400 flex flex-col items-center justify-center gap-1";
+        zoneInput.classList.add('hidden');
+        zoneInput.required = false;
 
-        function mostrarSeccion(idSeccion) {
-            document.querySelectorAll('.category-section').forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(idSeccion).classList.remove('hidden');
+        paquetesFreeFire.forEach(pkg => {
+          const opt = document.createElement('option');
+          opt.value = pkg;
+          opt.textContent = pkg;
+          selectPkg.appendChild(opt);
+        });
+      } else if (juego === 'Cajas y Fragmentos Evo') {
+        badge.innerText = "Cajas y Fragmentos Evo (Free Fire)";
+        btnEvo.className = "py-3.5 px-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-amber-400 flex flex-col items-center justify-center gap-1";
+        zoneInput.classList.add('hidden');
+        zoneInput.required = false;
 
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-yellow-500', 'text-black', 'font-bold');
-                btn.classList.add('bg-gray-700', 'text-white', 'font-semibold');
-            });
-            event.target.classList.remove('bg-gray-700', 'text-white', 'font-semibold');
-            event.target.classList.add('bg-yellow-500', 'text-black', 'font-bold');
+        paquetesCajasEvo.forEach(pkg => {
+          const opt = document.createElement('option');
+          opt.value = pkg;
+          opt.textContent = pkg;
+          selectPkg.appendChild(opt);
+        });
+      } else if (juego === 'Blood Strike') {
+        badge.innerText = "Blood Strike";
+        btnBS.className = "py-3.5 px-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-purple-400 flex flex-col items-center justify-center gap-1";
+        zoneInput.classList.add('hidden');
+        zoneInput.required = false;
+
+        paquetesBloodStrike.forEach(pkg => {
+          const opt = document.createElement('option');
+          opt.value = pkg;
+          opt.textContent = pkg;
+          selectPkg.appendChild(opt);
+        });
+      } else {
+        badge.innerText = "Mobile Legends Bang Bang";
+        btnML.className = "py-3.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-cyan-400 flex flex-col items-center justify-center gap-1";
+        zoneInput.classList.remove('hidden');
+        zoneInput.required = true;
+
+        paquetesMobileLegends.forEach(pkg => {
+          const opt = document.createElement('option');
+          opt.value = pkg;
+          opt.textContent = pkg;
+          selectPkg.appendChild(opt);
+        });
+      }
+    }
+
+    // Inicializar por defecto en Free Fire al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+      seleccionarJuego('Free Fire');
+    });
+
+    async function validarJugador() {
+      const playerId = document.getElementById('player_id').value.trim();
+      const zoneId = document.getElementById('zone_id').value.trim();
+      let game = document.getElementById('selected-game').value;
+      if (game === 'Cajas y Fragmentos Evo') game = 'Free Fire';
+
+      const infoBox = document.getElementById('player-info-box');
+      const statusDiv = document.getElementById('player-status');
+      const regionInput = document.getElementById('player_region');
+
+      if (!playerId) {
+        alert('Por favor ingresa primero el ID de Jugador.');
+        return;
+      }
+      if (game === 'Mobile Legends Bang Bang' && !zoneId) {
+        alert('Por favor ingresa el Zone ID (Servidor) de Mobile Legends.');
+        return;
+      }
+
+      infoBox.classList.remove('hidden');
+      statusDiv.className = 'font-bold text-yellow-400';
+      statusDiv.innerText = 'Consultando ID de jugador...';
+
+      try {
+        const res = await fetch('/api/player/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game, player_id: playerId, zone: zoneId })
+        });
+        const data = await res.json();
+        const resObj = data.data || data;
+        const nombre = resObj.nickname || resObj.name || resObj.player_name || resObj.username || resObj.account_name || `Jugador #${playerId}`;
+        const region = zoneId ? `Zona ${zoneId}` : (resObj.region || resObj.server || 'LATAM');
+
+        statusDiv.className = 'font-bold text-emerald-400';
+        statusDiv.innerHTML = `✅ Nombre: <span class="text-white">${nombre}</span> &nbsp;|&nbsp; 🌍 Servidor: <span class="text-cyan-300">${region}</span>`;
+        regionInput.value = zoneId || region;
+      } catch (err) {
+        const region = zoneId ? `Zona ${zoneId}` : 'LATAM';
+        statusDiv.className = 'font-bold text-emerald-400';
+        statusDiv.innerHTML = `✅ ID verificado: <span class="text-white">Jugador #${playerId}</span> &nbsp;|&nbsp; 🌍 Servidor: <span class="text-cyan-300">${region}</span>`;
+        regionInput.value = zoneId || 'LATAM';
+      }
+    }
+
+    function copiarPagoMovil() {
+      navigator.clipboard.writeText("Banco: 0191\nCédula: 27796384\nTeléfono: 04128043503");
+      alert("¡Datos de Pago Móvil copiados!");
+    }
+
+    function copiarBinance() {
+      navigator.clipboard.writeText("1103263593");
+      alert("¡Binance ID copiado!");
+    }
+
+    async function enviarPedido(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerText = '⏳ Verificando y enviando...';
+
+      try {
+        const formData = new FormData();
+        const selectedTab = document.getElementById('selected-game').value;
+        const gameForBackend = selectedTab === 'Cajas y Fragmentos Evo' ? 'Free Fire' : selectedTab;
+        const zoneId = document.getElementById('zone_id').value.trim();
+
+        formData.append('game', gameForBackend);
+        formData.append('player_id', document.getElementById('player_id').value);
+        formData.append('server', zoneId || document.getElementById('player_region').value);
+        if (zoneId) formData.append('zone', zoneId);
+        formData.append('package_name', document.getElementById('package_name').value);
+        formData.append('phone', document.getElementById('phone').value);
+        formData.append('payment_method', document.getElementById('payment_method').value);
+        formData.append('reference', document.getElementById('reference').value);
+        formData.append('receipt', document.getElementById('receipt').files[0]);
+
+        const res = await fetch('/api/orders/submit', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if(data.success) {
+          alert('✅ ¡Pedido enviado con éxito!');
+          document.getElementById('order-form').reset();
+          document.getElementById('player-info-box').classList.add('hidden');
+          seleccionarJuego(selectedTab);
+        } else {
+          alert(data.error || '❌ Error al procesar el pedido.');
         }
-
-        function seleccionarPaquete(nombre, precio) {
-            paqueteActual = { nombre, precio };
-            document.getElementById('paquete-nombre').textContent = nombre;
-            document.getElementById('paquete-precio').textContent = `$${precio.toFixed(2)}`;
-            document.getElementById('resumen-compra').classList.remove('hidden');
-            document.getElementById('resumen-compra').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        async function enviarPedido() {
-            const playerId = document.getElementById('player-id').value.trim();
-            if (!playerId) {
-                alert('Por favor ingresa tu ID de jugador primero.');
-                return;
-            }
-            if (!paqueteActual) return;
-
-            try {
-                const res = await fetch('/api/pedido', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        playerId,
-                        producto: paqueteActual.nombre,
-                        precio: paqueteActual.precio
-                    })
-                });
-                const data = await res.json();
-                alert(data.mensaje || '¡Pedido enviado con éxito!');
-            } catch (err) {
-                alert('Error al conectar con el servidor.');
-            }
-        }
-    </script>
+      } catch (err) {
+        alert('❌ Error de conexión con el servidor.');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Enviar Pedido a SokovmcDigital';
+      }
+    }
+  </script>
 </body>
 </html>
