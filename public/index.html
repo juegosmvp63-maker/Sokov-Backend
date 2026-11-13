@@ -14,25 +14,25 @@
     .animate-float { animation: float 3s ease-in-out infinite; }
 
     @keyframes bgPulseZoom {
-      0% { transform: scale(1) translate(0px, 0px); filter: brightness(0.95) saturate(1.1); }
-      50% { transform: scale(1.06) translate(-8px, -5px); filter: brightness(1.1) saturate(1.3); }
-      100% { transform: scale(1) translate(0px, 0px); filter: brightness(0.95) saturate(1.1); }
+      0% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.04); filter: brightness(1.1); }
+      100% { transform: scale(1); filter: brightness(1); }
     }
     .bg-animated-image {
-      animation: bgPulseZoom 16s ease-in-out infinite;
+      animation: bgPulseZoom 18s ease-in-out infinite;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-white font-sans min-h-screen pb-24 relative overflow-x-hidden">
-  <!-- Fondo Animado con tu Imagen del Setup -->
+<body class="text-white font-sans min-h-screen pb-24 relative overflow-x-hidden bg-slate-950">
+  <!-- Fondo con tu Imagen del Setup (Visible y Animada) -->
   <div class="fixed inset-0 z-[-2] overflow-hidden">
     <img src="bg-setup.png" alt="Fondo Setup Gamer" class="w-full h-full object-cover object-center bg-animated-image">
   </div>
-  <!-- Capa oscura y desenfoque sutil para que se lean bien los textos y precios -->
-  <div class="fixed inset-0 z-[-1] bg-slate-950/75 backdrop-blur-[2px]"></div>
+  <!-- Capa oscura sutil (transparente para que se aprecie el setup pero se lean los textos) -->
+  <div class="fixed inset-0 z-[-1] bg-slate-950/45 backdrop-blur-[1px]"></div>
 
   <!-- Banner SokovmcDigital -->
-  <header class="relative bg-slate-950/60 backdrop-blur-md py-8 px-4 text-center overflow-hidden shadow-2xl border-b border-purple-500/40">
+  <header class="relative bg-slate-950/70 backdrop-blur-md py-8 px-4 text-center overflow-hidden shadow-2xl border-b border-purple-500/40">
     <div class="relative max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="text-left">
         <span class="bg-purple-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow">SokovmcDigital</span>
@@ -41,15 +41,15 @@
       </div>
       
       <div class="flex gap-3 animate-float">
-        <div class="bg-blue-900/50 border border-cyan-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+        <div class="bg-blue-900/60 border border-cyan-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
           <span class="block text-[10px] text-cyan-300 font-extrabold">FREE FIRE</span>
           <span class="text-lg font-black">⚡</span>
         </div>
-        <div class="bg-purple-900/50 border border-purple-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+        <div class="bg-purple-900/60 border border-purple-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
           <span class="block text-[10px] text-purple-300 font-extrabold">BLOOD STRIKE</span>
           <span class="text-lg font-black">🔥</span>
         </div>
-        <div class="bg-sky-900/50 border border-sky-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
+        <div class="bg-sky-900/60 border border-sky-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
           <span class="block text-[10px] text-sky-300 font-extrabold">MLBB</span>
           <span class="text-lg font-black">💎</span>
         </div>
@@ -65,18 +65,18 @@
         <span class="text-base">⚡ Free Fire</span>
         <span class="text-[11px] font-normal text-blue-100">Diamantes, Pases y Evo</span>
       </button>
-      <button type="button" onclick="seleccionarJuego('Blood Strike')" id="btn-bs" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-purple-500/60">
+      <button type="button" onclick="seleccionarJuego('Blood Strike')" id="btn-bs" class="py-3.5 px-3 bg-slate-900/75 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-purple-500/60">
         <span class="text-base">🔥 Blood Strike</span>
         <span class="text-[11px] font-normal text-slate-400">Oro y Pases Élite</span>
       </button>
-      <button type="button" onclick="seleccionarJuego('Mobile Legends Bang Bang')" id="btn-ml" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-cyan-500/60">
+      <button type="button" onclick="seleccionarJuego('Mobile Legends Bang Bang')" id="btn-ml" class="py-3.5 px-3 bg-slate-900/75 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-cyan-500/60">
         <span class="text-base">💎 Mobile Legends</span>
         <span class="text-[11px] font-normal text-slate-400">Diamantes y Pases</span>
       </button>
     </div>
 
     <!-- Streaming y Contacto -->
-    <div class="bg-slate-950/65 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="bg-slate-900/75 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>
         <h3 class="text-base font-bold text-purple-300 flex items-center gap-2">📺 Cuentas de Streaming Disponibles</h3>
         <p class="text-xs text-slate-300 mt-0.5">Netflix, Disney+, Max, Prime Video, YouTube Premium y más.</p>
@@ -87,7 +87,7 @@
     </div>
 
     <!-- Datos de Pago -->
-    <div class="bg-slate-950/65 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 mb-6 shadow-2xl">
+    <div class="bg-slate-900/75 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 mb-6 shadow-2xl">
       <h3 class="text-base font-bold text-cyan-400 mb-3 flex items-center gap-2">💳 Métodos de Pago Oficiales</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
         <div class="bg-slate-950/85 p-3.5 rounded-xl border border-slate-800">
@@ -113,7 +113,7 @@
     </div>
 
     <!-- Formulario -->
-    <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-950/65 backdrop-blur-md border border-purple-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+    <form id="order-form" onsubmit="enviarPedido(event)" class="bg-slate-900/75 backdrop-blur-md border border-purple-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
       <input type="hidden" id="selected-game" value="Free Fire">
       <input type="hidden" id="player_region" value="LATAM">
       
@@ -223,7 +223,7 @@
       const badge = document.getElementById('game-badge');
       const zoneInput = document.getElementById('zone_id');
 
-      const inactiveClass = "py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1";
+      const inactiveClass = "py-3.5 px-3 bg-slate-900/75 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1";
 
       btnFF.className = inactiveClass + " hover:border-blue-500/60";
       btnBS.className = inactiveClass + " hover:border-purple-500/60";
