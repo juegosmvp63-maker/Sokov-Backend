@@ -30,14 +30,10 @@
         <p class="text-slate-200 text-xs md:text-sm mt-1">Recargas oficiales y 100% seguras para tus juegos favoritos.</p>
       </div>
       
-      <div class="flex flex-wrap justify-center gap-3 animate-float">
+      <div class="flex gap-3 animate-float">
         <div class="bg-blue-900/50 border border-cyan-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
           <span class="block text-[10px] text-cyan-300 font-extrabold">FREE FIRE</span>
           <span class="text-lg font-black">⚡</span>
-        </div>
-        <div class="bg-amber-900/50 border border-amber-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
-          <span class="block text-[10px] text-amber-300 font-extrabold">CAJAS EVO</span>
-          <span class="text-lg font-black">📦</span>
         </div>
         <div class="bg-purple-900/50 border border-purple-400 px-3.5 py-2 rounded-2xl text-center backdrop-blur-md shadow-lg">
           <span class="block text-[10px] text-purple-300 font-extrabold">BLOOD STRIKE</span>
@@ -53,15 +49,11 @@
 
   <main class="max-w-3xl mx-auto px-4 mt-6">
     
-    <!-- Botones de Selección de Juego (Opción 2: Pestaña separada para Cajas/Fragmentos Evo) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <!-- Botones de Selección de Juego (Solo los 3 botones originales) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
       <button type="button" onclick="seleccionarJuego('Free Fire')" id="btn-ff" class="py-3.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-blue-400 flex flex-col items-center justify-center gap-1">
         <span class="text-base">⚡ Free Fire</span>
-        <span class="text-[11px] font-normal text-blue-100">Diamantes y Pases</span>
-      </button>
-      <button type="button" onclick="seleccionarJuego('Cajas y Fragmentos Evo')" id="btn-evo" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-amber-500/60">
-        <span class="text-base">📦 Cajas Evo</span>
-        <span class="text-[11px] font-normal text-slate-400">Fragmentos Arma Evo</span>
+        <span class="text-[11px] font-normal text-blue-100">Diamantes, Pases y Evo</span>
       </button>
       <button type="button" onclick="seleccionarJuego('Blood Strike')" id="btn-bs" class="py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1 hover:border-purple-500/60">
         <span class="text-base">🔥 Blood Strike</span>
@@ -116,7 +108,7 @@
       <input type="hidden" id="player_region" value="LATAM">
       
       <div class="flex items-center justify-between bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800">
-        <span class="text-xs text-slate-400">Categoría Seleccionada:</span>
+        <span class="text-xs text-slate-400">Juego Seleccionado:</span>
         <span id="game-badge" class="font-extrabold text-cyan-400 text-sm">Free Fire</span>
       </div>
 
@@ -180,10 +172,7 @@
       "2.398 Diamantes -> 14.972 Bs / $14.97",
       "6.160 Diamantes -> 37.935 Bs / $37.94",
       "Membresía: Tarjeta Semanal -> 1.910 Bs / $1.91",
-      "Membresía: Tarjeta Mensual -> 8.576 Bs / $8.58"
-    ];
-
-    const paquetesCajasEvo = [
+      "Membresía: Tarjeta Mensual -> 8.576 Bs / $8.58",
       "1 Caja de fragmentos Evo -> 35,00 Bs / $0.03",
       "5 Cajas de fragmentos Evo -> 160,00 Bs / $0.15",
       "10 Cajas de fragmentos Evo -> 320,00 Bs / $0.30",
@@ -219,7 +208,6 @@
       selectPkg.innerHTML = '';
 
       const btnFF = document.getElementById('btn-ff');
-      const btnEvo = document.getElementById('btn-evo');
       const btnBS = document.getElementById('btn-bs');
       const btnML = document.getElementById('btn-ml');
       const badge = document.getElementById('game-badge');
@@ -228,7 +216,6 @@
       const inactiveClass = "py-3.5 px-3 bg-slate-950/60 backdrop-blur-md text-slate-300 font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-slate-700/60 flex flex-col items-center justify-center gap-1";
 
       btnFF.className = inactiveClass + " hover:border-blue-500/60";
-      btnEvo.className = inactiveClass + " hover:border-amber-500/60";
       btnBS.className = inactiveClass + " hover:border-purple-500/60";
       btnML.className = inactiveClass + " hover:border-cyan-500/60";
 
@@ -239,18 +226,6 @@
         zoneInput.required = false;
 
         paquetesFreeFire.forEach(pkg => {
-          const opt = document.createElement('option');
-          opt.value = pkg;
-          opt.textContent = pkg;
-          selectPkg.appendChild(opt);
-        });
-      } else if (juego === 'Cajas y Fragmentos Evo') {
-        badge.innerText = "Cajas y Fragmentos Evo (Free Fire)";
-        btnEvo.className = "py-3.5 px-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black rounded-2xl shadow-xl transition transform active:scale-95 border border-amber-400 flex flex-col items-center justify-center gap-1";
-        zoneInput.classList.add('hidden');
-        zoneInput.required = false;
-
-        paquetesCajasEvo.forEach(pkg => {
           const opt = document.createElement('option');
           opt.value = pkg;
           opt.textContent = pkg;
@@ -291,9 +266,7 @@
     async function validarJugador() {
       const playerId = document.getElementById('player_id').value.trim();
       const zoneId = document.getElementById('zone_id').value.trim();
-      let game = document.getElementById('selected-game').value;
-      if (game === 'Cajas y Fragmentos Evo') game = 'Free Fire';
-
+      const game = document.getElementById('selected-game').value;
       const infoBox = document.getElementById('player-info-box');
       const statusDiv = document.getElementById('player-status');
       const regionInput = document.getElementById('player_region');
@@ -351,11 +324,10 @@
 
       try {
         const formData = new FormData();
-        const selectedTab = document.getElementById('selected-game').value;
-        const gameForBackend = selectedTab === 'Cajas y Fragmentos Evo' ? 'Free Fire' : selectedTab;
+        const game = document.getElementById('selected-game').value;
         const zoneId = document.getElementById('zone_id').value.trim();
 
-        formData.append('game', gameForBackend);
+        formData.append('game', game);
         formData.append('player_id', document.getElementById('player_id').value);
         formData.append('server', zoneId || document.getElementById('player_region').value);
         if (zoneId) formData.append('zone', zoneId);
@@ -372,7 +344,7 @@
           alert('✅ ¡Pedido enviado con éxito!');
           document.getElementById('order-form').reset();
           document.getElementById('player-info-box').classList.add('hidden');
-          seleccionarJuego(selectedTab);
+          seleccionarJuego(game);
         } else {
           alert(data.error || '❌ Error al procesar el pedido.');
         }
