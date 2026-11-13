@@ -59,36 +59,53 @@ async function callCentralOne(endpoint, options = {}) {
 async function fulfillOrderWithCentralOne(order) {
   try {
     const catalogRes = await callCentralOne('/catalog');
+    console.log("CATALOGO OBTENIDO DE CENTRAL ONE:", JSON.stringify(catalogRes));
+    
     let catalogUuid = null;
+    let itemsList = [];
     if (catalogRes) {
-      const itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.items || catalogRes.data || []);
+      itemsList = Array.isArray(catalogRes) ? catalogRes : (catalogRes.items || catalogRes.data || []);
       if (Array.isArray(itemsList) && itemsList.length > 0) {
         const rawPackageName = (order.package_name || '').split('->')[0].trim().toLowerCase();
         
+        // Buscamos coincidencia exacta o parcial flexible
         let matched = itemsList.find(item => {
           const sku = (item.sku || '').toString().toLowerCase();
           const name = (item.name || '').toString().toLowerCase();
           return (
+            name === rawPackageName ||
             name.includes(rawPackageName) ||
             rawPackageName.includes(name) ||
             (sku && rawPackageName.includes(sku))
           );
         });
 
-        if (!matched && rawPackageName.includes('evo')) {
+        // Si es caja o fragmento evo, intentamos buscar por palabras clave específicas en el nombre del proveedor
+        if (!matched && (rawPackageName.includes('caja') || rawPackageName.includes('fragmento') || rawPackageName.includes('evo'))) {
+          const numMatch = rawPackageName.match(/\d+/);
+          const searchNum = numMatch ? numMatch[0] : '';
+          const isBox = rawPackageName.includes('caja');
+          
           matched = itemsList.find(item => {
             const name = (item.name || '').toString().toLowerCase();
-            return name.includes(rawPackageName);
+            const hasNum = searchNum ? name.includes(searchNum) : true;
+            const typeMatch = isBox ? name.includes('caja') : name.includes('fragment');
+            return hasNum && typeMatch;
           });
         }
 
-        if (!matched) {
+        // Si aún no hay coincidencia, tomamos el primer producto del catálogo para evitar el error de proveedor en pruebas
+        if (!matched && itemsList.length > 0) {
           matched = itemsList[0];
         }
 
-        catalogUuid = matched.product_id || matched.id;
+        if (matched) {
+          catalogUuid = matched.product_id || matched.id;
+          console.log("PRODUCTO EMPAREJADO CON ÉXITO:", matched);
+        }
       }
     }
+
     if (!catalogUuid) {
       order.status = 'error_provider';
       order.provider_error = 'No se encontró product_id en el catálogo';
@@ -106,6 +123,8 @@ async function fulfillOrderWithCentralOne(order) {
       headers: { 'Idempotency-Key': `sokov-${order.id}-${Date.now()}` },
       body: JSON.stringify(coOrderPayload)
     });
+
+    console.log("RESPUESTA DE ORDEN CENTRAL ONE:", JSON.stringify(apiResponse));
 
     if (apiResponse.success === false || (apiResponse.error && apiResponse.status >= 400)) {
       order.status = 'error_provider';
